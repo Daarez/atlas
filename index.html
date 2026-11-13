@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Исторический Атлас Мира (v2.0 — Скан по умолчанию & Умный кириллический поиск сёл)</title>
+    <title>Исторический Атлас Мира (v2.1 — 360° Калибровка, Гид & Авторская Защита)</title>
+    <meta name="author" content="Сергій Пересунько (Daarez)">
+    <meta name="copyright" content="Copyright (c) 2026 Сергій Пересунько (Daarez). All rights reserved.">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -158,6 +160,35 @@
         .mob-nav-btn:last-child { border-right: none; }
         .mob-nav-btn.active { background: #262626; color: #ffd700; border-top: 2.5px solid #d4af37; }
 
+
+        /* v2.1: Модальное окно-приветствие (Онбординг от сестры) и Авторская защита */
+        .welcome-modal-backdrop { position: fixed; inset: 0; background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(5px); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 14px; }
+        .welcome-modal-backdrop.open { display: flex; }
+        .welcome-card { background: linear-gradient(145deg, #24201a, #171512); border: 1.5px solid #d4af37; border-radius: 10px; max-width: 620px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 18px 20px; color: #f2e9d8; box-shadow: 0 14px 45px rgba(0,0,0,0.92); position: relative; }
+        .welcome-card h2 { font-size: 1.15rem; color: #ffd700; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .welcome-sub { font-size: 0.82rem; color: #d8c8a8; line-height: 1.45; margin-bottom: 12px; }
+        .guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+        .guide-item { background: rgba(255, 255, 255, 0.04); border: 1px solid #4a3e2a; border-radius: 6px; padding: 9px 10px; }
+        .guide-item b { color: #ffd700; font-size: 0.8rem; display: block; margin-bottom: 3px; }
+        .guide-item span { font-size: 0.74rem; color: #ccc; line-height: 1.35; display: block; }
+        .welcome-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid #3d3528; padding-top: 12px; flex-wrap: wrap; }
+        .author-stamp { font-size: 0.72rem; color: #bfa36f; }
+        .author-stamp a { color: #ffd700; text-decoration: none; font-weight: bold; }
+        .btn-start-atlas { background: #d4af37; color: #111; border: none; padding: 7px 16px; border-radius: 5px; font-weight: 800; font-size: 0.8rem; cursor: pointer; box-shadow: 0 2px 10px rgba(212,175,55,0.4); }
+        .btn-start-atlas:hover { background: #ffe066; }
+
+        /* v2.1: Плавное вращение 360 градусов (ползунок и индикатор угла) */
+        .rot-control-box { background: rgba(20,20,20,0.94); border: 1px solid #d4af37; border-radius: 6px; padding: 4px 4px; width: 42px; display: flex; flex-direction: column; align-items: center; gap: 3px; box-shadow: 0 2px 8px rgba(0,0,0,0.7); }
+        .rot-deg-label { font-size: 0.58rem; color: #ffd700; font-weight: bold; }
+        .rot-slider-vert { width: 34px; accent-color: #d4af37; cursor: pointer; }
+
+        .author-Map-badge { position: absolute; bottom: 3px; left: 8px; z-index: 950; background: rgba(18,18,18,0.82); color: #c8b07a; border: 1px solid #443822; padding: 2px 7px; border-radius: 4px; font-size: 0.64rem; pointer-events: auto; }
+        .author-Map-badge a { color: #ffd700; text-decoration: none; }
+
+        @media (max-width: 650px) {
+            .guide-grid { grid-template-columns: 1fr; }
+        }
+
         @media (max-width: 950px) {
             header { height: 42px; padding: 0 8px; }
             .brand { font-size: 0.84rem; }
@@ -192,7 +223,7 @@
 <body>
 
     <header>
-        <div class="brand">🗺️ Атлас Мира <span class="ver-pill">v2.0</span></div>
+        <div class="brand">🗺️ Атлас Мира <span class="ver-pill">v2.1</span></div>
         
         <div style="display:flex; align-items:center; gap:6px;">
             <div class="current-loc-badge" id="currentLocBadge" title="Текущая исследуемая точка мира">📍 Загрузка...</div>
@@ -207,7 +238,8 @@
             <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
                 <button class="btn-ui" onclick="locateUserGPS(); closeMobileDrawer();" title="Найти моё текущее местоположение">🎯 Геопозиция</button>
                 <button class="btn-ui" onclick="toggleModernLayer(); closeMobileDrawer();">🛰️ Спутник</button>
-                <button class="btn-ui btn-save" onclick="downloadSelfHtml();" title="Сохранить готовый файл atlas.html в 1 клик">💾 Скачать .html</button>
+                <button class="btn-ui" style="border-color:#d4af37;color:#ffd700;" onclick="openWelcomeModal(); closeMobileDrawer();" id="helpGuideBtn">❓ Гид</button>
+                <button class="btn-ui btn-save" id="authorDownloadBtn" onclick="downloadSelfHtml();" title="Режим автора: Сохранить готовый файл .html (Ctrl+Shift+S)">💾 Скачать .html</button>
                 <div class="lang-switch">
                     <button class="lang-btn active" onclick="setLang('ru', this)">RU</button>
                     <button class="lang-btn" onclick="setLang('ua', this)">UA</button>
@@ -250,17 +282,22 @@
             <div class="scan-loading-badge" id="scanLoadingBadge">⏳ Загрузка подлинных карт из архива Wikimedia...</div>
             
             <div class="scan-controls">
-                <div class="compass-widget" onclick="toggleRotation()" title="Развернуть ориентацию (Север / Юг)">
+                <div class="compass-widget" onclick="stepRotation90()" title="Повернуть на 90° (или крути ползунок / двумя пальцами на экране)">
                     <span class="compass-arrow" id="compassArrow">⬆️</span>
-                    <span class="compass-label" id="compassText">N</span>
+                    <span class="compass-label" id="compassText">0°</span>
+                </div>
+                <div class="rot-control-box" title="Плавный поворот карты/скана на 360° (-180°...+180°)">
+                    <span class="rot-deg-label">🔄 Угол</span>
+                    <input type="range" id="rotAngleSlider" class="rot-slider-vert" min="-180" max="180" value="0" step="1" oninput="setRotationAngle(this.value)">
                 </div>
                 <button class="tool-btn" id="zoomInScanBtn" style="display:block;" onclick="zoomScan(0.35)">➕</button>
                 <button class="tool-btn" id="zoomOutScanBtn" style="display:block;" onclick="zoomScan(-0.35)">➖</button>
-                <button class="tool-btn" onclick="resetScanCalibrationOnly()" title="Сбросить только сдвиг/масштаб скана (1:1)">1:1</button>
+                <button class="tool-btn" onclick="resetScanCalibrationOnly()" title="Сбросить масштаб, сдвиг и угол скана (1:1)">1:1</button>
                 <button class="tool-btn" onclick="resetCenter()" title="Сбросить вид в центр">🎯</button>
             </div>
 
             <div id="historicMap"></div>
+            <div class="author-Map-badge">© 2026 <a href="https://github.com/Daarez/atlas" target="_blank">Сергій Пересунько (Daarez)</a></div>
 
             <!-- Слой подлинного архивного скана -->
             <div class="scan-layer mode-scan" id="scanLayer" style="opacity:1;">
@@ -323,6 +360,50 @@
         <button class="mob-nav-btn" id="mobBtnPass" onclick="switchMobilePane('passportPanel', this)">📖 Паспорт</button>
     </nav>
 
+
+    <!-- v2.1: МОДАЛЬНОЕ ОКНО-ПРИВЕТСТВИЕ И ИНТЕРАКТИВНЫЙ ГИД -->
+    <div class="welcome-modal-backdrop" id="welcomeModalBackdrop" onclick="if(event.target===this) closeWelcomeModal()">
+        <div class="welcome-card">
+            <h2>
+                <span>🧭 Добро пожаловать в Исторический Атлас Мира!</span>
+                <button class="btn-ui" onclick="closeWelcomeModal()" style="height:26px;padding:2px 8px;">✕</button>
+            </h2>
+            <p class="welcome-sub">
+                Это интерактивная машина времени: здесь можно кликнуть в <b>любую точку Земли</b> (или ввести название города/села в поиск) и мгновенно поднять подлинные архивные карты до 1945 года, старые топонимы и летопись места.
+            </p>
+            <div class="guide-grid">
+                <div class="guide-item">
+                    <b>📜 1. Режим «Скан» и «Карта»</b>
+                    <span>По умолчанию в правом окне открывается подлинный старинный скан из архива Wikimedia. Листай карты кнопками <b>◀ ▶</b> внизу или открывай <b>🔍 Ориг.</b> в полном разрешении.</span>
+                </div>
+                <div class="guide-item">
+                    <b>🌓 2. Режим «Наложение» + Поворот 360°</b>
+                    <span>Накладывает старую карту полупрозрачным слоем поверх современной! Нажми кнопку <b>📌 Карта ➔ ✋ Скан</b>, чтобы двигать, масштабировать и <b>крутить скан двумя пальцами</b> (или ползунком <b>🔄 Угол</b> справа), совмещая старые дороги с современными.</span>
+                </div>
+                <div class="guide-item">
+                    <b>🌗 3. Режим «Шторка»</b>
+                    <span>Тяни золотой разделитель <b>◀|▶</b> влево-вправо, чтобы вживую сравнивать старинную гравюру и современную карту на одном экране.</span>
+                </div>
+                <div class="guide-item">
+                    <b>🔸 4. Золотая шкала времени и Паспорт</b>
+                    <span>Над ползунком времени загораются <b>золотые кнопки реальных лет</b> найденных карт. А справа в «Паспорте» собраны старые названия села/города и кликабельные памятники в радиусе 10 км.</span>
+                </div>
+            </div>
+            <div class="welcome-footer">
+                <div class="author-stamp">
+                    Автор проекта и архитектуры: <b>© 2026 Сергій Пересунько (<a href="https://github.com/Daarez/atlas" target="_blank">Daarez</a>)</b>.<br>
+                    Все права защищены (All rights reserved).
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <label style="font-size:0.73rem;color:#ccc;cursor:pointer;display:flex;align-items:center;gap:4px;">
+                        <input type="checkbox" id="dontShowWelcomeChk" style="accent-color:#d4af37;"> Не показывать при входе
+                    </label>
+                    <button class="btn-start-atlas" onclick="closeWelcomeModal()">🚀 Начать исследование</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
         let currentLang = 'ru';
@@ -337,7 +418,7 @@
 
         let selectedYear = 1750;
         let isSatellite = false;
-        let isRotated = false;
+        let rotationAngle = 0;
         let rightMode = 'scan';
         let pinFilter = 'all';
         let isWarpMode = false;
@@ -491,7 +572,7 @@
             const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'atlas_v2.0.html';
+            a.download = 'atlas_v2.1.html';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1514,7 +1595,8 @@
         }
 
         function resetScanCalibrationOnly() {
-            scanScale = 1; panX = 0; panY = 0; isRotated = false;
+            scanScale = 1; panX = 0; panY = 0; rotationAngle = 0;
+            const sl = document.getElementById('rotAngleSlider'); if (sl) sl.value = 0;
             applyScanTransform();
         }
 
@@ -1664,34 +1746,76 @@
         }
 
         function resetCenter() {
-            scanScale = 1; panX = 0; panY = 0; isRotated = false;
+            scanScale = 1; panX = 0; panY = 0; rotationAngle = 0;
+            const sl = document.getElementById('rotAngleSlider');
+            if (sl) sl.value = 0;
             applyScanTransform();
             if (modernMap) modernMap.setView(currentCoords, 12);
         }
 
         function applyScanTransform() {
-            const deg = isRotated ? 180 : 0;
+            const deg = rotationAngle;
             document.getElementById('scanWrapper').style.transform = `translate(${panX}px, ${panY}px) scale(${scanScale}) rotate(${deg}deg)`;
             document.getElementById('historicMap').style.transform = (rightMode === 'map') ? `rotate(${deg}deg)` : 'rotate(0deg)';
-            document.getElementById('compassArrow').innerText = isRotated ? `⬇️` : `⬆️`;
-            document.getElementById('compassText').innerText = isRotated ? `ЮГ` : `N`;
+            const arrowEl = document.getElementById('compassArrow');
+            if (arrowEl) {
+                arrowEl.style.display = 'inline-block';
+                arrowEl.style.transform = `rotate(${deg}deg)`;
+            }
+            const textEl = document.getElementById('compassText');
+            if (textEl) {
+                textEl.innerText = deg === 0 ? 'N' : `${Math.round(deg)}°`;
+            }
+        }
+
+        function setRotationAngle(val) {
+            rotationAngle = parseFloat(val) || 0;
+            applyScanTransform();
+        }
+
+        function stepRotation90() {
+            // Быстрый шаг по 90° (0 -> 90 -> 180 -> -90 -> 0)
+            if (rotationAngle === 0) rotationAngle = 90;
+            else if (rotationAngle > 0 && rotationAngle <= 90) rotationAngle = 180;
+            else if (rotationAngle > 90) rotationAngle = -90;
+            else rotationAngle = 0;
+            const sl = document.getElementById('rotAngleSlider');
+            if (sl) sl.value = rotationAngle;
+            applyScanTransform();
         }
 
         function zoomScan(delta) {
-            scanScale = Math.min(Math.max(0.4, scanScale + delta), 5);
+            scanScale = Math.min(Math.max(0.35, scanScale + delta), 6);
             applyScanTransform();
         }
 
-        function toggleRotation() {
-            isRotated = !isRotated;
-            applyScanTransform();
+        // Поддержка мультитач-жестов двумя пальцами на смартфоне (Pinch-to-Zoom + Two-Finger Rotate на 360°!)
+        let isTwoFingerGesture = false;
+        let initialPinchDist = 0;
+        let initialPinchScale = 1;
+        let initialFingerAngle = 0;
+        let initialRotationAngle = 0;
+
+        function getTouchDistance(t1, t2) {
+            return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        }
+        function getTouchAngleDeg(t1, t2) {
+            return Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
         }
 
         const scanLayerEl = document.getElementById('scanLayer');
         scanLayerEl.addEventListener('wheel', function(e) {
             if (rightMode === 'scan' || (rightMode === 'overlay' && isWarpMode)) {
                 e.preventDefault();
-                zoomScan(e.deltaY < 0 ? 0.2 : -0.2);
+                if (e.shiftKey) {
+                    // Зажатый Shift + колесо мыши = плавное вращение скана на ПК!
+                    rotationAngle = Math.max(-180, Math.min(180, rotationAngle + (e.deltaY < 0 ? 5 : -5)));
+                    const sl = document.getElementById('rotAngleSlider');
+                    if (sl) sl.value = rotationAngle;
+                    applyScanTransform();
+                } else {
+                    zoomScan(e.deltaY < 0 ? 0.2 : -0.2);
+                }
             }
         });
         scanLayerEl.addEventListener('mousedown', function(e) {
@@ -1700,8 +1824,19 @@
             }
         });
         scanLayerEl.addEventListener('touchstart', function(e) {
-            if ((rightMode === 'scan' || (rightMode === 'overlay' && isWarpMode)) && e.touches[0]) {
-                isDraggingScan = true; startX = e.touches[0].clientX - panX; startY = e.touches[0].clientY - panY;
+            if (!(rightMode === 'scan' || (rightMode === 'overlay' && isWarpMode))) return;
+            if (e.touches.length === 2) {
+                isDraggingScan = false;
+                isTwoFingerGesture = true;
+                initialPinchDist = getTouchDistance(e.touches[0], e.touches[1]);
+                initialPinchScale = scanScale;
+                initialFingerAngle = getTouchAngleDeg(e.touches[0], e.touches[1]);
+                initialRotationAngle = rotationAngle;
+            } else if (e.touches.length === 1) {
+                isTwoFingerGesture = false;
+                isDraggingScan = true;
+                startX = e.touches[0].clientX - panX;
+                startY = e.touches[0].clientY - panY;
             }
         }, { passive: true });
         window.addEventListener('mousemove', function(e) {
@@ -1709,11 +1844,82 @@
             panX = e.clientX - startX; panY = e.clientY - startY; applyScanTransform();
         });
         window.addEventListener('touchmove', function(e) {
-            if (!isDraggingScan || !e.touches[0]) return;
-            panX = e.touches[0].clientX - startX; panY = e.touches[0].clientY - startY; applyScanTransform();
+            if (!(rightMode === 'scan' || (rightMode === 'overlay' && isWarpMode))) return;
+            if (isTwoFingerGesture && e.touches.length === 2) {
+                const dist = getTouchDistance(e.touches[0], e.touches[1]);
+                if (initialPinchDist > 10) {
+                    scanScale = Math.min(Math.max(0.35, initialPinchScale * (dist / initialPinchDist)), 6);
+                }
+                const angleDiff = getTouchAngleDeg(e.touches[0], e.touches[1]) - initialFingerAngle;
+                let newRot = initialRotationAngle + angleDiff;
+                while (newRot > 180) newRot -= 360;
+                while (newRot < -180) newRot += 360;
+                rotationAngle = Math.round(newRot);
+                const sl = document.getElementById('rotAngleSlider');
+                if (sl) sl.value = rotationAngle;
+                applyScanTransform();
+            } else if (isDraggingScan && e.touches.length === 1) {
+                panX = e.touches[0].clientX - startX;
+                panY = e.touches[0].clientY - startY;
+                applyScanTransform();
+            }
         }, { passive: true });
         window.addEventListener('mouseup', () => { isDraggingScan = false; });
-        window.addEventListener('touchend', () => { isDraggingScan = false; });
+        window.addEventListener('touchend', (e) => {
+            if (!e.touches || e.touches.length === 0) {
+                isDraggingScan = false;
+                isTwoFingerGesture = false;
+            }
+        });
+
+        // v2.1: Управление окном приветствия и защита авторства (Domain Lock & Скрытие кнопки скачивания для гостей)
+        function openWelcomeModal() {
+            document.getElementById('welcomeModalBackdrop').classList.add('open');
+        }
+        function closeWelcomeModal() {
+            const chk = document.getElementById('dontShowWelcomeChk');
+            if (chk && chk.checked) {
+                try { localStorage.setItem('atlas_hide_welcome_v21', '1'); } catch(e) {}
+            }
+            document.getElementById('welcomeModalBackdrop').classList.remove('open');
+        }
+
+        (function initAuthorProtectionAndWelcome() {
+            const host = (window.location.hostname || '').toLowerCase();
+            const isOwnerEnv = !host || host === 'localhost' || host === '127.0.0.1' || host.endsWith('github.io') || host.includes('googleusercontent.com');
+            const dlBtn = document.getElementById('authorDownloadBtn');
+
+            // На публичном сайте github.io прячем кнопку "Скачать .html" от случайных гостей (но автор всегда может нажать Ctrl+Shift+S!)
+            if (host.endsWith('github.io') && dlBtn) {
+                dlBtn.style.display = 'none';
+            }
+
+            // Секретный хоткей автора: Ctrl + Shift + S (показывает кнопку и скачивает .html)
+            window.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.shiftKey && (e.key === 'S' || e.key === 's' || e.key === 'Ы' || e.key === 'ы')) {
+                    e.preventDefault();
+                    if (dlBtn) dlBtn.style.display = 'inline-flex';
+                    downloadSelfHtml();
+                }
+            });
+
+            // Если кто-то скопировал код на чужой домен — выводим несмываемую плашку авторства
+            if (!isOwnerEnv) {
+                const warn = document.createElement('div');
+                warn.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#b82323;color:#fff;text-align:center;padding:6px;font-size:0.78rem;z-index:9999;font-weight:bold;';
+                warn.innerHTML = '⚠️ Копия проекта! Оригинал «Исторического Атласа Мира» принадлежит Сергію Пересунько (Daarez): <a href="https://daarez.github.io/atlas/" style="color:#ffd700;">daarez.github.io/atlas</a>';
+                document.body.appendChild(warn);
+            }
+
+            // Показываем окно-приветствие при первом визите
+            try {
+                if (localStorage.getItem('atlas_hide_welcome_v21') !== '1') {
+                    setTimeout(openWelcomeModal, 350);
+                }
+            } catch(e) {
+                setTimeout(openWelcomeModal, 350);
+            }
+        })();
 
         function setLang(lang, btnEl) {
             currentLang = lang;
