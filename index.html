@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Исторический Атлас Мира (v2.0 — Скан по умолчанию & Умный кириллический поиск сёл)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; background: #141414; color: #f0f0f0; overflow: hidden; }
+        
+        div[style*="z-index: 99999"], div[style*="z-index: 2147483647"], a[href*="tiiny.host"], iframe[src*="tiiny"] { display: none !important; height: 0 !important; opacity: 0 !important; pointer-events: none !important; }
+
+        header { height: 50px; background: #202020; border-bottom: 1px solid #3a3a3a; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; z-index: 2200; gap: 8px; flex-shrink: 0; position: relative; }
+        .brand { font-size: 0.95rem; font-weight: bold; color: #fff; display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+        .ver-pill { background: #ffd700; color: #111; font-size: 0.66rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; }
+        
+        .current-loc-badge { background: #2a2a2a; color: #ffd700; border: 1px solid #555; padding: 5px 10px; border-radius: 4px; font-size: 0.78rem; font-weight: bold; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+
+        .btn-ui { background: #303030; color: #eee; border: 1px solid #555; padding: 5px 9px; border-radius: 4px; font-size: 0.76rem; cursor: pointer; height: 32px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-ui:hover { background: #444; }
+        .btn-save { border-color: #4cd137; color: #a8ffb2; }
+
+        .header-drawer { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
+        .search-bar { display: flex; align-items: center; gap: 5px; flex: 1; max-width: 440px; }
+        .search-input { flex: 1; background: #121212; color: #fff; border: 1px solid #555; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; height: 32px; }
+        .search-input:focus { border-color: #d4af37; outline: none; }
+        
+        .lang-switch { display: flex; gap: 3px; }
+        .lang-btn { background: #303030; color: #aaa; border: 1px solid #555; padding: 0 7px; height: 32px; border-radius: 3px; cursor: pointer; font-size: 0.73rem; font-weight: bold; }
+        .lang-btn.active { background: #007acc; color: #fff; border-color: #0098ff; }
+
+        .mob-Menu-toggle { display: none; background: #333; color: #ffd700; border: 1px solid #d4af37; padding: 0 9px; height: 32px; border-radius: 4px; font-size: 0.76rem; font-weight: bold; cursor: pointer; white-space: nowrap; }
+
+        .main-container { display: flex; flex: 1; min-height: 0; position: relative; overflow: hidden; }
+        .map-pane { flex: 1; height: 100%; border-right: 1px solid #3a3a3a; position: relative; background: #181512; overflow: hidden; }
+        
+        .pane-topbar { position: absolute; top: 8px; left: 46px; right: 56px; z-index: 1000; display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
+        .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: nowrap; }
+        .map-badge { background: rgba(18, 18, 18, 0.88); padding: 4px 9px; border-radius: 4px; font-size: 0.73rem; border: 1px solid #555; pointer-events: auto; box-shadow: 0 2px 6px rgba(0,0,0,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .view-mode-tabs { display: flex; background: rgba(18,18,18,0.94); border: 1px solid #777; border-radius: 5px; overflow: hidden; pointer-events: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.7); flex-shrink: 0; }
+        .mode-tab { background: transparent; color: #ccc; border: none; border-right: 1px solid #444; padding: 5px 8px; font-size: 0.72rem; font-weight: bold; cursor: pointer; white-space: nowrap; }
+        .mode-tab:last-child { border-right: none; }
+        .mode-tab.active { background: #d4af37; color: #111; }
+
+        .pin-filters { display: flex; gap: 3px; pointer-events: auto; flex-shrink: 0; }
+        .filter-chip { background: rgba(20,20,20,0.92); border: 1px solid #555; color: #ccc; padding: 3px 7px; border-radius: 10px; font-size: 0.69rem; cursor: pointer; font-weight: bold; white-space: nowrap; }
+        .filter-chip.active { border-color: #d4af37; color: #fff; background: rgba(70,52,20,0.95); }
+
+        .triangulation-note { background: rgba(30, 24, 15, 0.92); border: 1px solid #d4af37; color: #f5d77f; padding: 4px 8px; border-radius: 4px; font-size: 0.68rem; pointer-events: auto; display: none; box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+        .triangulation-note.visible { display: block; }
+
+        #historicMap, #modernMap { width: 100%; height: 100%; }
+        #historicMap { transition: transform 0.35s ease; }
+        .parchment-filter .leaflet-tile-pane { filter: sepia(65%) contrast(106%) brightness(93%) hue-rotate(-10deg); }
+
+        .scan-layer { position: absolute; inset: 0; z-index: 900; display: none; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; touch-action: none; }
+        .scan-layer.mode-scan { display: flex; background: radial-gradient(circle, #25201a 0%, #100d0a 100%); pointer-events: auto; cursor: grab; }
+        .scan-layer.mode-scan:active { cursor: grabbing; }
+        .scan-layer.mode-overlay { display: flex; background: transparent; pointer-events: none; }
+        .scan-layer.mode-overlay.interactive-warp { pointer-events: auto; cursor: move; }
+        .scan-layer.mode-swipe { display: flex; background: #1a1612; pointer-events: none; }
+        
+        .scan-wrapper { position: relative; transition: transform 0.06s ease-out; transform-origin: center center; display: flex; align-items: center; justify-content: center; }
+        .scan-wrapper img { max-width: 90vw; max-height: 72vh; border: 3px solid #8c6d46; border-radius: 4px; box-shadow: 0 10px 35px rgba(0,0,0,0.9); display: none; margin: auto; user-select: none; -webkit-user-drag: none; background: #181512; }
+        .scan-wrapper img.loaded { display: block; }
+
+        .scan-loading-badge { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); z-index: 995; background: rgba(20, 20, 20, 0.94); border: 1px solid #d4af37; color: #ffd700; padding: 5px 12px; border-radius: 20px; font-size: 0.74rem; font-weight: bold; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.7); white-space: nowrap; }
+        .scan-loading-badge.visible { display: block; }
+
+        /* Нижняя панель листания архивных сканов — СТРОГО В ОДНУ СТРОКУ */
+        .scan-gallery-bar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1005; background: rgba(18, 18, 18, 0.95); border: 1px solid #d4af37; border-radius: 6px; padding: 5px 10px; display: none; align-items: center; gap: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.85); white-space: nowrap; max-width: 96%; flex-wrap: nowrap; }
+        .scan-gallery-bar.visible { display: flex; }
+        .gal-btn { background: #333; color: #ffd700; border: 1px solid #666; padding: 4px 9px; border-radius: 4px; font-size: 0.74rem; cursor: pointer; font-weight: bold; flex-shrink: 0; }
+        .gal-btn:hover { background: #444; }
+        .gal-info { font-size: 0.73rem; color: #eee; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .swipe-handle { position: absolute; top: 0; bottom: 0; left: 50%; width: 3px; background: #d4af37; z-index: 980; cursor: ew-resize; display: none; box-shadow: 0 0 10px rgba(0,0,0,0.9); touch-action: none; }
+        .swipe-handle.active { display: block; }
+        .swipe-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; color: #d4af37; font-weight: bold; font-size: 0.7rem; padding: 6px 9px; border-radius: 16px; border: 2px solid #d4af37; box-shadow: 0 2px 10px rgba(0,0,0,0.85); white-space: nowrap; user-select: none; }
+
+        .overlay-controls-sub { display: none; align-items: center; gap: 6px; border-left: 1px solid #444; padding-left: 8px; flex-shrink: 0; }
+        .overlay-controls-sub.visible { display: flex; }
+        .overlay-controls-sub label { font-size: 0.72rem; color: #e8c682; font-weight: bold; display: flex; align-items: center; gap: 4px; }
+        .overlay-controls-sub input[type=range] { width: 65px; accent-color: #d4af37; cursor: pointer; }
+        .warp-toggle-btn { background: #333; color: #ddd; border: 1px solid #666; padding: 4px 7px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: bold; }
+        .warp-toggle-btn.active { background: #007acc; color: #fff; border-color: #0098ff; }
+
+        .scan-controls { position: absolute; top: 44px; right: 8px; z-index: 1000; display: flex; flex-direction: column; gap: 5px; }
+        .compass-widget { background: rgba(20,20,20,0.92); border: 1.5px solid #d4af37; border-radius: 50%; width: 40px; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.7); }
+        .compass-arrow { font-size: 0.85rem; line-height: 1; }
+        .compass-label { font-size: 0.46rem; font-weight: bold; color: #d4af37; text-align: center; }
+        .tool-btn { background: rgba(25,25,25,0.92); color: #eee; border: 1px solid #666; border-radius: 4px; width: 40px; padding: 4px 1px; font-size: 0.62rem; cursor: pointer; text-align: center; font-weight: 600; }
+
+        .info-panel { width: 420px; background: #1e1e1e; border-left: 1px solid #3a3a3a; display: flex; flex-direction: column; height: 100%; overflow-y: auto; padding: 11px; -webkit-overflow-scrolling: touch; }
+        
+        .passport-section { margin-bottom: 9px; background: #282828; border-radius: 6px; padding: 10px; border: 1px solid #3c3c3c; }
+        .passport-section.clickable-card { cursor: pointer; }
+        .passport-section.clickable-card:hover { border-color: #d4af37; background: #2f2c26; }
+        .passport-section h3 { font-size: 0.84rem; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+        .fly-hint { font-size: 0.65rem; color: #aaa; font-weight: normal; background: #1c1c1c; padding: 2px 6px; border-radius: 3px; border: 1px solid #444; white-space: nowrap; }
+        .tag-fact { color: #4cd137; }
+        .tag-hypo { color: #fbc531; }
+        .tag-myth { color: #ff5252; }
+        .passport-section p { font-size: 0.8rem; line-height: 1.45; color: #ddd; margin-bottom: 5px; }
+        .hist-aliases { font-size: 0.75rem; color: #ffd700; background: rgba(212, 175, 55, 0.12); border: 1px solid rgba(212, 175, 55, 0.35); padding: 4px 8px; border-radius: 4px; margin-top: 5px; }
+        .source-ref { font-size: 0.7rem; color: #999; font-style: italic; border-top: 1px dashed #444; padding-top: 4px; margin-top: 4px; }
+
+        .hist-pin-short {
+            padding: 3px 7px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+            box-shadow: 0 2px 7px rgba(0,0,0,0.85), 0 0 0 1.5px rgba(255,255,255,0.8);
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            max-width: 135px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .hist-pin-short:hover { transform: translate(-50%, -50%) scale(1.12); z-index: 3000 !important; }
+        .pin-fact { background: rgba(33, 140, 58, 0.94); }
+        .pin-hypo { background: rgba(194, 139, 0, 0.94); }
+        .pin-myth { background: rgba(184, 35, 35, 0.94); }
+
+        .leaflet-popup-content-wrapper { background: rgba(24, 22, 18, 0.96); color: #f5e8cc; border: 1.5px solid #d4af37; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.8); }
+        .leaflet-popup-tip { background: #d4af37; }
+        .leaflet-popup-content { margin: 9px 12px; font-size: 0.8rem; line-height: 1.35; }
+
+        /* ВАРИАНТ В: ДВУХУРОВНЕВАЯ ГИБРИДНАЯ ШКАЛА ВРЕМЕНИ С ЗОЛОТЫМИ ЗАСЕЧКАМИ РЕАЛЬНЫХ КАРТ */
+        .timeline-wrapper { background: #202020; border-top: 1px solid #3a3a3a; display: flex; flex-direction: column; padding: 4px 10px 6px; gap: 4px; z-index: 2000; flex-shrink: 0; }
+        
+        .gold-milestones-bar { display: flex; align-items: center; gap: 5px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; min-height: 24px; }
+        .gold-milestones-bar::-webkit-scrollbar { display: none; }
+        .milestones-title { font-size: 0.68rem; color: #aaa; white-space: nowrap; font-weight: bold; }
+        .gold-chip { background: rgba(55, 43, 15, 0.9); color: #ffd700; border: 1px solid #d4af37; padding: 2px 8px; border-radius: 10px; font-size: 0.69rem; font-weight: bold; cursor: pointer; white-space: nowrap; transition: 0.15s; }
+        .gold-chip:hover, .gold-chip.active { background: #d4af37; color: #111; box-shadow: 0 0 8px rgba(212,175,55,0.6); }
+
+        .timeline-row { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+        .year-input-group { display: flex; align-items: center; gap: 3px; background: #141414; padding: 2px 5px; border-radius: 4px; border: 1px solid #555; flex-shrink: 0; }
+        .year-input { width: 56px; background: #222; color: #ffd700; border: 1px solid #666; padding: 3px; border-radius: 3px; font-weight: bold; font-size: 0.76rem; text-align: center; }
+        
+        .slider-track-box { position: relative; flex: 1; display: flex; align-items: center; min-width: 80px; }
+        .slider-track-box input[type=range] { width: 100%; accent-color: #d4af37; cursor: pointer; height: 5px; z-index: 2; position: relative; background: transparent; }
+        .tick-marks-layer { position: absolute; left: 6px; right: 6px; top: 50%; transform: translateY(-50%); height: 12px; pointer-events: none; z-index: 1; }
+        .gold-tick { position: absolute; width: 3px; height: 12px; background: #ffd700; border-radius: 1px; transform: translateX(-50%); box-shadow: 0 0 4px #d4af37; }
+
+        .epoch-badge { background: #007acc; color: #fff; padding: 4px 9px; border-radius: 4px; font-size: 0.73rem; font-weight: bold; text-align: center; white-space: nowrap; flex-shrink: 0; }
+        .step-btn { background: #333; color: #eee; border: 1px solid #555; padding: 4px 7px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.72rem; white-space: nowrap; flex-shrink: 0; }
+        .nearest-hint { font-size: 0.7rem; color: #fbc531; white-space: nowrap; flex-shrink: 0; }
+
+        .mobile-nav { display: none; height: 44px; background: #181818; border-top: 1px solid #3a3a3a; z-index: 2500; flex-shrink: 0; }
+        .mob-nav-btn { flex: 1; background: transparent; color: #aaa; border: none; border-right: 1px solid #2e2e2e; font-size: 0.76rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .mob-nav-btn:last-child { border-right: none; }
+        .mob-nav-btn.active { background: #262626; color: #ffd700; border-top: 2.5px solid #d4af37; }
+
+        @media (max-width: 950px) {
+            header { height: 42px; padding: 0 8px; }
+            .brand { font-size: 0.84rem; }
+            .ver-pill { display: none; }
+            .current-loc-badge { max-width: 130px; font-size: 0.72rem; padding: 4px 7px; }
+            .mob-Menu-toggle { display: inline-flex; align-items: center; }
+            
+            .header-drawer { display: none; position: absolute; top: 42px; left: 0; right: 0; background: rgba(24, 24, 24, 0.98); border-bottom: 2px solid #d4af37; padding: 10px; flex-direction: column; align-items: stretch; gap: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.85); z-index: 3000; }
+            .header-drawer.open { display: flex; }
+            .search-bar { max-width: 100%; width: 100%; }
+            
+            .pane-topbar { top: 6px; left: 6px; right: 6px; }
+            .topbar-row { gap: 4px; overflow-x: auto; scrollbar-width: none; }
+            .topbar-row::-webkit-scrollbar { display: none; }
+            .mode-tab { padding: 4px 6px; font-size: 0.67rem; }
+            .filter-text-lbl { display: none; }
+            .filter-chip { padding: 3px 6px; font-size: 0.67rem; }
+
+            .timeline-wrapper { padding: 3px 6px 4px; gap: 3px; }
+            #yearInputLabel, .nearest-hint, .milestones-title { display: none; }
+            .year-input { width: 46px; font-size: 0.72rem; padding: 2px; }
+            .epoch-badge { font-size: 0.68rem; padding: 4px 6px; max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
+
+            .mobile-nav { display: flex; }
+            .map-pane, .info-panel { display: none !important; width: 100% !important; height: 100% !important; border: none !important; }
+            .mobile-active-pane { display: flex !important; flex-direction: column; }
+            .scan-wrapper img { max-width: 96vw; max-height: 66vh; }
+            .gal-info { max-width: 115px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">🗺️ Атлас Мира <span class="ver-pill">v2.0</span></div>
+        
+        <div style="display:flex; align-items:center; gap:6px;">
+            <div class="current-loc-badge" id="currentLocBadge" title="Текущая исследуемая точка мира">📍 Загрузка...</div>
+            <button class="mob-Menu-toggle" onclick="toggleMobileDrawer()" id="mobDrawerBtn">🔍 Поиск / RU ▾</button>
+        </div>
+
+        <div class="header-drawer" id="headerDrawer">
+            <div class="search-bar">
+                <input type="text" id="globalSearchInput" class="search-input" placeholder="🔍 Введи любой город, село или реку мира..." onkeydown="if(event.key==='Enter') { searchAnyPlace(); closeMobileDrawer(); }" />
+                <button class="btn-ui" onclick="searchAnyPlace(); closeMobileDrawer();" id="searchBtn">Найти</button>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
+                <button class="btn-ui" onclick="locateUserGPS(); closeMobileDrawer();" title="Найти моё текущее местоположение">🎯 Геопозиция</button>
+                <button class="btn-ui" onclick="toggleModernLayer(); closeMobileDrawer();">🛰️ Спутник</button>
+                <button class="btn-ui btn-save" onclick="downloadSelfHtml();" title="Сохранить готовый файл atlas.html в 1 клик">💾 Скачать .html</button>
+                <div class="lang-switch">
+                    <button class="lang-btn active" onclick="setLang('ru', this)">RU</button>
+                    <button class="lang-btn" onclick="setLang('ua', this)">UA</button>
+                    <button class="lang-btn" onclick="setLang('pl', this)">PL</button>
+                    <button class="lang-btn" onclick="setLang('de', this)">DE</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- ОКНО 1: Современная карта -->
+        <div class="map-pane" id="modernPane">
+            <div class="pane-topbar">
+                <div class="map-badge" id="modern-label">📍 Кликни в любую точку земного шара</div>
+            </div>
+            <div id="modernMap"></div>
+        </div>
+
+        <!-- ОКНО 2: Историческая карта и настоящие архивные сканы -->
+        <div class="map-pane parchment-filter mobile-active-pane" id="historicPane">
+            <div class="pane-topbar">
+                <div class="topbar-row">
+                    <div class="view-mode-tabs">
+                        <button class="mode-tab active" id="tabScanBtn" onclick="setRightMode('scan')">📜 Скан</button>
+                        <button class="mode-tab" id="tabMapBtn" onclick="setRightMode('map')">🗺️ Карта</button>
+                        <button class="mode-tab" id="tabOverlayBtn" onclick="setRightMode('overlay')">🌓 Налож.</button>
+                        <button class="mode-tab" id="tabSwipeBtn" onclick="setRightMode('swipe')">🌗 Шторка</button>
+                    </div>
+                    <div class="pin-filters">
+                        <button class="filter-chip active" onclick="setPinFilter('all', this)">Все</button>
+                        <button class="filter-chip" onclick="setPinFilter('fact', this)">🟢<span class="filter-text-lbl"> Главные</span></button>
+                        <button class="filter-chip" onclick="setPinFilter('hypo', this)">🟡<span class="filter-text-lbl"> Памятники</span></button>
+                        <button class="filter-chip" onclick="setPinFilter('myth', this)">🔴<span class="filter-text-lbl"> Окрестности</span></button>
+                    </div>
+                </div>
+                <div class="triangulation-note" id="triangulationNote"></div>
+            </div>
+
+            <div class="scan-loading-badge" id="scanLoadingBadge">⏳ Загрузка подлинных карт из архива Wikimedia...</div>
+            
+            <div class="scan-controls">
+                <div class="compass-widget" onclick="toggleRotation()" title="Развернуть ориентацию (Север / Юг)">
+                    <span class="compass-arrow" id="compassArrow">⬆️</span>
+                    <span class="compass-label" id="compassText">N</span>
+                </div>
+                <button class="tool-btn" id="zoomInScanBtn" style="display:block;" onclick="zoomScan(0.35)">➕</button>
+                <button class="tool-btn" id="zoomOutScanBtn" style="display:block;" onclick="zoomScan(-0.35)">➖</button>
+                <button class="tool-btn" onclick="resetScanCalibrationOnly()" title="Сбросить только сдвиг/масштаб скана (1:1)">1:1</button>
+                <button class="tool-btn" onclick="resetCenter()" title="Сбросить вид в центр">🎯</button>
+            </div>
+
+            <div id="historicMap"></div>
+
+            <!-- Слой подлинного архивного скана -->
+            <div class="scan-layer mode-scan" id="scanLayer" style="opacity:1;">
+                <div class="scan-wrapper" id="scanWrapper">
+                    <img id="archiveScanImg" src="" alt="" />
+                </div>
+            </div>
+
+            <div class="swipe-handle" id="swipeHandle">
+                <div class="swipe-knob">◀|▶</div>
+            </div>
+
+            <!-- Нижний пульт листания архивных карт — строго в одну строчку -->
+            <div class="scan-gallery-bar visible" id="scanGalleryBar">
+                <button class="gal-btn" onclick="stepArchiveScan(-1)" title="Предыдущая карта из архива">◀</button>
+                <span class="gal-info" id="galInfoText">📜 Загрузка...</span>
+                <button class="gal-btn" onclick="stepArchiveScan(1)" title="Следующая карта из архива">▶</button>
+                <button class="gal-btn" onclick="openOriginalScan()" title="Открыть оригинал карты в полном разрешении">🔍 Ориг.</button>
+
+                <div class="overlay-controls-sub" id="overlaySubControls">
+                    <label>
+                        <span id="opacityLabelText">Слой:</span>
+                        <input type="range" id="opacitySlider" min="15" max="100" value="65" oninput="updateOverlayOpacity(this.value)">
+                    </label>
+                    <button class="warp-toggle-btn" id="warpToggleBtn" onclick="toggleWarpMode()">📌 Карта</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ОКНО 3: Исторический паспорт любой точки мира -->
+        <div class="info-panel" id="passportPanel"></div>
+    </div>
+
+    <!-- ВАРИАНТ В: Гибридная шкала времени (произвольный год + золотые засечки реальных карт города) -->
+    <div class="timeline-wrapper">
+        <div class="gold-milestones-bar" id="goldMilestonesBar">
+            <span class="milestones-title">🔸 Карты в архиве:</span>
+        </div>
+        <div class="timeline-row">
+            <div class="year-input-group">
+                <span style="font-size:0.72rem; color:#aaa;" id="yearInputLabel">Год:</span>
+                <input type="number" id="customYearInput" class="year-input" value="1750" onkeydown="if(event.key==='Enter') jumpToCustomYear()" />
+                <button class="step-btn" onclick="jumpToCustomYear()">➔</button>
+            </div>
+            <button class="step-btn" onclick="stepMilestone(-1)" title="К предыдущей золотой дате карты">◀</button>
+            <div class="slider-track-box">
+                <div class="tick-marks-layer" id="tickMarksLayer"></div>
+                <input type="range" id="timeSlider" min="100" max="1950" value="1750" step="1" oninput="onContinuousSliderInput(this.value)">
+            </div>
+            <button class="step-btn" onclick="stepMilestone(1)" title="К следующей золотой дате карты">▶</button>
+            <div class="nearest-hint" id="nearestYearHint">1750 г.</div>
+            <div class="epoch-badge" id="epochBadge">1750 г.</div>
+        </div>
+    </div>
+
+    <!-- Мобильное меню переключения экранов -->
+    <nav class="mobile-nav">
+        <button class="mob-nav-btn active" id="mobBtnHist" onclick="switchMobilePane('historicPane', this)">📜 Ист. карта</button>
+        <button class="mob-nav-btn" id="mobBtnMod" onclick="switchMobilePane('modernPane', this)">📍 Совр. карта</button>
+        <button class="mob-nav-btn" id="mobBtnPass" onclick="switchMobilePane('passportPanel', this)">📖 Паспорт</button>
+    </nav>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        let currentLang = 'ru';
+        let currentCoords = [54.2611, 18.6361];
+        let currentPlaceLocalName = '';
+        let currentPlaceIntlCity = '';
+        let currentPlaceIntlCounty = '';
+        let currentPlaceIntlState = '';
+        let currentPlaceIntlCountry = '';
+        let extractedHistoricalNames = [];
+        let currentRequestId = 0;
+
+        let selectedYear = 1750;
+        let isSatellite = false;
+        let isRotated = false;
+        let rightMode = 'scan';
+        let pinFilter = 'all';
+        let isWarpMode = false;
+        let overlayOpacity = 0.65;
+        let swipePercent = 50;
+        let isDraggingSwipe = false;
+
+        let scanScale = 1, panX = 0, panY = 0, isDraggingScan = false, startX = 0, startY = 0;
+
+        let currentArchiveScans = [];
+        let currentScanIdx = 0;
+        let currentPinsList = [];
+        let activeMarkersByType = {};
+
+        const i18n = {
+            ru: {
+                modernLabel: `📍 Кликни в любую точку мира или введи название в поиск`,
+                searchPlaceholder: `🔍 Введи любой город, пригород, село или реку...`,
+                searchBtn: `Найти`,
+                tabMap: `🗺️ Карта`,
+                tabScan: `📜 Скан`,
+                tabOverlay: `🌓 Налож.`,
+                tabSwipe: `🌗 Шторка`,
+                opacityLabel: `Слой:`,
+                modeMoveMap: `📌 Карта`,
+                modeWarpScan: `✋ Скан`,
+                yearLabel: `Год:`,
+                sovereignty: `Исследуемая локация и исторические имена:`,
+                names: `Исторические объекты в радиусе 10 км:`,
+                mapSourceLabel: `Активная архивная карта:`,
+                mainHistoryTitle: `🟢 1. История и энциклопедическая сводка`,
+                monumentsTitle: `🟡 2. Архитектура, памятники и древности рядом`,
+                surroundingsTitle: `🔴 3. Культурный ландшафт и соседние центры`,
+                flyToPin: `🎯 На карте`,
+                source: `Источник данных:`,
+                triangNote: `📐 Выбирай золотые даты реальных карт 🔸 над ползунком или листай сканы кнопками ◀ ▶.`
+            },
+            ua: {
+                modernLabel: `📍 Клікни в будь-яку точку світу або введи назву в пошук`,
+                searchPlaceholder: `🔍 Введи будь-яке місто, передмістя, село або річку...`,
+                searchBtn: `Знайти`,
+                tabMap: `🗺️ Карта`,
+                tabScan: `📜 Скан`,
+                tabOverlay: `🌓 Наклад.`,
+                tabSwipe: `🌗 Шторка`,
+                opacityLabel: `Шар:`,
+                modeMoveMap: `📌 Карта`,
+                modeWarpScan: `✋ Скан`,
+                yearLabel: `Рік:`,
+                sovereignty: `Досліджувана локація та історичні назви:`,
+                names: `Історичні об'єкти в радіусі 10 км:`,
+                mapSourceLabel: `Активна архівна карта:`,
+                mainHistoryTitle: `🟢 1. Історія та енциклопедична довідка`,
+                monumentsTitle: `🟡 2. Архітектура, пам'ятки та старожитності поруч`,
+                surroundingsTitle: `🔴 3. Культурний ландшафт та сусідні центри`,
+                flyToPin: `🎯 На карті`,
+                source: `Джерело даних:`,
+                triangNote: `📐 Обирай золоті дати реальних карт 🔸 над повзунком або гортай скани кнопками ◀ ▶.`
+            },
+            pl: {
+                modernLabel: `📍 Kliknij dowolny punkt na świecie lub wpisz nazwę w wyszukiwarkę`,
+                searchPlaceholder: `🔍 Wpisz dowolne miasto, przedmieście, wieś lub rzekę...`,
+                searchBtn: `Szukaj`,
+                tabMap: `🗺️ Mapa`,
+                tabScan: `📜 Skan`,
+                tabOverlay: `🌓 Nałoż.`,
+                tabSwipe: `🌗 Kurtyna`,
+                opacityLabel: `Warstwa:`,
+                modeMoveMap: `📌 Mapa`,
+                modeWarpScan: `✋ Skan`,
+                yearLabel: `Rok:`,
+                sovereignty: `Badana lokalizacja i nazwy historyczne:`,
+                names: `Obiekty historyczne w promieniu 10 km:`,
+                mapSourceLabel: `Aktywna mapa archiwalna:`,
+                mainHistoryTitle: `🟢 1. Historia i zarys encyklopedyczny`,
+                monumentsTitle: `🟡 2. Zabytki i obiekty historyczne w pobliżu`,
+                surroundingsTitle: `🔴 3. Krajobraz kulturowy i sąsiednie ośrodki`,
+                flyToPin: `🎯 Na mapie`,
+                source: `Źródło danych:`,
+                triangNote: `📐 Wybieraj złote daty map 🔸 nad suwakiem lub przełączaj skany przyciskami ◀ ▶.`
+            },
+            de: {
+                modernLabel: `📍 Klicken Sie weltweit auf die Karte oder suchen Sie oben`,
+                searchPlaceholder: `🔍 Beliebige Stadt, Vorort, Dorf oder Fluss eingeben...`,
+                searchBtn: `Suchen`,
+                tabMap: `🗺️ Karte`,
+                tabScan: `📜 Scan`,
+                tabOverlay: `🌓 Überlag.`,
+                tabSwipe: `🌗 Vorhang`,
+                opacityLabel: `Ebene:`,
+                modeMoveMap: `📌 Karte`,
+                modeWarpScan: `✋ Scan`,
+                yearLabel: `Jahr:`,
+                sovereignty: `Untersuchter Ort & historische Namen:`,
+                names: `Historische Objekte im Umkreis von 10 km:`,
+                mapSourceLabel: `Aktive Archivkarte:`,
+                mainHistoryTitle: `🟢 1. Geschichte & enzyklopädischer Überblick`,
+                monumentsTitle: `🟡 2. Baudenkmäler & historische Orte in der Nähe`,
+                surroundingsTitle: `🔴 3. Kulturlandschaft & Nachbarorte`,
+                flyToPin: `🎯 Zeigen`,
+                source: `Datenquelle:`,
+                triangNote: `📐 Wählen Sie goldene Kartendaten 🔸 über dem Regler oder blättern Sie mit ◀ ▶.`
+            }
+        };
+
+        // JSONP-загрузчик для MediaWiki API
+        function fetchWikimediaJsonp(apiUrl) {
+            return new Promise((resolve) => {
+                const cbName = 'wikiJsonp_' + Math.floor(Math.random() * 1000000000) + '_' + Date.now();
+                const script = document.createElement('script');
+                let timer = setTimeout(() => {
+                    cleanup();
+                    resolve(null);
+                }, 6500);
+
+                function cleanup() {
+                    clearTimeout(timer);
+                    delete window[cbName];
+                    if (script.parentNode) script.parentNode.removeChild(script);
+                }
+
+                window[cbName] = function(data) {
+                    cleanup();
+                    resolve(data);
+                };
+
+                script.onerror = function() {
+                    cleanup();
+                    resolve(null);
+                };
+
+                script.src = apiUrl + `&format=json&callback=${cbName}`;
+                document.body.appendChild(script);
+            });
+        }
+
+        function downloadSelfHtml() {
+            const clone = document.documentElement.cloneNode(true);
+            ['modernMap', 'historicMap', 'passportPanel', 'goldMilestonesBar', 'tickMarksLayer'].forEach(id => {
+                const el = clone.querySelector('#' + id);
+                if (el) {
+                    el.innerHTML = '';
+                    el.removeAttribute('class');
+                    if (id === 'passportPanel') el.className = 'info-panel';
+                    if (id === 'goldMilestonesBar') el.className = 'gold-milestones-bar';
+                    if (id === 'tickMarksLayer') el.className = 'tick-marks-layer';
+                }
+            });
+            clone.querySelectorAll('script[src*="callback=wikiJsonp_"]').forEach(s => s.remove());
+            const htmlSource = '<!DOCTYPE html>\n' + clone.outerHTML;
+            const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'atlas_v2.0.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function toggleMobileDrawer() {
+            document.getElementById('headerDrawer').classList.toggle('open');
+        }
+        function closeMobileDrawer() {
+            document.getElementById('headerDrawer').classList.remove('open');
+        }
+
+        function switchMobilePane(paneId, btnEl) {
+            closeMobileDrawer();
+            ['modernPane', 'historicPane', 'passportPanel'].forEach(id => {
+                document.getElementById(id).classList.remove('mobile-active-pane');
+            });
+            document.getElementById(paneId).classList.add('mobile-active-pane');
+            document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            if (modernMap && historicMap) {
+                setTimeout(() => { modernMap.invalidateSize(); historicMap.invalidateSize(); }, 100);
+            }
+        }
+
+        let modernMap, historicMap, modernStreet, modernSat, modernMarker, searchCircle, historicCircle, historicPinsLayer;
+
+        try {
+            if (typeof L !== 'undefined') {
+                modernMap = L.map('modernMap').setView(currentCoords, 12);
+                historicMap = L.map('historicMap', { zoomControl: false }).setView(currentCoords, 12);
+
+                modernStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: '© Esri' }).addTo(modernMap);
+                modernSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: '© Esri Satellite' });
+                
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: '© Esri Historical Style' }).addTo(historicMap);
+
+                modernMarker = L.marker(currentCoords).addTo(modernMap);
+                searchCircle = L.circle(currentCoords, { radius: 10000, color: '#0098ff', fillColor: '#0098ff', fillOpacity: 0.1 }).addTo(modernMap);
+                historicCircle = L.circle(currentCoords, { radius: 10000, color: '#d4af37', weight: 2, dashArray: '6, 6', fillColor: '#d4af37', fillOpacity: 0.05 }).addTo(historicMap);
+                
+                historicPinsLayer = L.layerGroup().addTo(historicMap);
+
+                let isSyncing = false;
+                modernMap.on('move', function() {
+                    if (isSyncing) return;
+                    isSyncing = true;
+                    historicMap.setView(modernMap.getCenter(), modernMap.getZoom(), { animate: false });
+                    isSyncing = false;
+                });
+                historicMap.on('move', function() {
+                    if (isSyncing) return;
+                    isSyncing = true;
+                    modernMap.setView(historicMap.getCenter(), historicMap.getZoom(), { animate: false });
+                    isSyncing = false;
+                });
+
+                modernMap.on('click', function(e) {
+                    exploreWorldPoint(e.latlng.lat, e.latlng.lng, null);
+                });
+            }
+        } catch (err) {
+            console.error('Map init error:', err);
+        }
+
+        // Генератор польских/международных фонетических вариантов для кириллических запросов (например: "Ленгово, поморское, польша" -> "Łęgowo, pomorskie, Polska" / "Legowo, pomorskie, Polska")
+        function buildCyrillicSearchFallbacks(rawQuery) {
+            const variants = new Set();
+            const q = rawQuery.trim();
+            variants.add(q);
+
+            if (!/[А-Яа-яЁёІіЇїЄєҐґ]/.test(q)) {
+                return Array.from(variants);
+            }
+
+            // Словарь перевода частых регионов/стран в поисковых запросах
+            const regionDict = [
+                [/\bпоморское(?:\s+воеводство)?\b/gi, 'pomorskie'],
+                [/\bпоморське(?:\s+воєводство)?\b/gi, 'pomorskie'],
+                [/\bмазовецкое(?:\s+воеводство)?\b/gi, 'mazowieckie'],
+                [/\bмалопольское(?:\s+воеводство)?\b/gi, 'małopolskie'],
+                [/\bвеликопольское(?:\s+воеводство)?\b/gi, 'wielkopolskie'],
+                [/\bсилезское(?:\s+воеводство)?\b/gi, 'śląskie'],
+                [/\bнижнесилезское(?:\s+воеводство)?\b/gi, 'dolnośląskie'],
+                [/\bварминьско-мазурское\b/gi, 'warmińsko-mazurskie'],
+                [/\bзападно-поморское\b/gi, 'zachodniopomorskie'],
+                [/\bгданьский(?:\s+повят|\s+повет)?\b/gi, 'powiat gdański'],
+                [/\bпольша\b/gi, 'Polska'],
+                [/\bпольща\b/gi, 'Polska'],
+                [/\bгермания\b/gi, 'Deutschland'],
+                [/\bнімеччина\b/gi, 'Deutschland'],
+                [/\bукраина\b/gi, 'Україна']
+            ];
+
+            // Прямой словарь частых малых сёл и городов
+            const directVillageDict = [
+                [/\bленгово\b/gi, 'Łęgowo'],
+                [/\bрусочин\b/gi, 'Rusocin'],
+                [/\bстрашин\b/gi, 'Straszyn'],
+                [/\bюшково\b/gi, 'Juszkowo'],
+                [/\bрожины\b/gi, 'Różyny'],
+                [/\bжукчин\b/gi, 'Żukczyn'],
+                [/\bротманка\b/gi, 'Rotmanka'],
+                [/\bборково\b/gi, 'Borkowo'],
+                [/\bцеплево\b/gi, 'Cieplewo'],
+                [/\bрокитница\b/gi, 'Rokitnica'],
+                [/\bрадуница\b/gi, 'Radunica'],
+                [/\bпрущ[\s\-]*гданьский\b/gi, 'Pruszcz Gdański'],
+                [/\bпщулки\b/gi, 'Pszczółki'],
+                [/\bкольбуды\b/gi, 'Kolbudy'],
+                [/\bтрамбки[\s\-]*вельке\b/gi, 'Trąbki Wielkie'],
+                [/\bцедры[\s\-]*вельке\b/gi, 'Cedry Wielkie']
+            ];
+
+            let mappedQ = q;
+            regionDict.forEach(([rx, rep]) => { mappedQ = mappedQ.replace(rx, rep); });
+            directVillageDict.forEach(([rx, rep]) => { mappedQ = mappedQ.replace(rx, rep); });
+            if (mappedQ !== q) variants.add(mappedQ);
+
+            // Польская фонетическая транслитерация кириллического названия села (например: Ленгово -> Legowo / Łęgowo, Русочин -> Rusocin / Rusoczyn)
+            function cyrToPolishPhonetic(str, useDiacritics) {
+                let s = str;
+                regionDict.forEach(([rx, rep]) => { s = s.replace(rx, rep); });
+                directVillageDict.forEach(([rx, rep]) => { s = s.replace(rx, rep); });
+
+                // Специальные польские буквосочетания
+                const rules = [
+                    [/щ/g, 'szcz'], [/Щ/g, 'Szcz'],
+                    [/ш/g, 'sz'], [/Ш/g, 'Sz'],
+                    [/ж/g, useDiacritics ? 'ż' : 'z'], [/Ж/g, useDiacritics ? 'Ż' : 'Z'],
+                    [/ч(и|е)/g, 'c$1'], [/Ч(и|е)/g, 'C$1'],
+                    [/ч/g, 'cz'], [/Ч/g, 'Cz'],
+                    [/ц/g, 'c'], [/Ц/g, 'C'],
+                    [/х/g, 'ch'], [/Х/g, 'Ch'],
+                    [/ю/g, 'ju'], [/Ю/g, 'Ju'],
+                    [/я/g, 'ja'], [/Я/g, 'Ja'],
+                    [/ё/g, 'jo'], [/Ё/g, 'Jo'],
+                    [/е/g, 'e'], [/Е/g, 'E'],
+                    [/ен([гкбп])/gi, useDiacritics ? 'ę$1' : 'e$1'],
+                    [/он([гкбпдт])/gi, useDiacritics ? 'ą$1' : 'o$1'],
+                    [/л([аоуыэ])/g, useDiacritics ? 'ł$1' : 'l$1'],
+                    [/Л([аоуыэ])/g, useDiacritics ? 'Ł$1' : 'L$1'],
+                    [/л/g, 'l'], [/Л/g, 'L'],
+                    [/в/g, 'w'], [/В/g, 'W'],
+                    [/г/g, 'g'], [/Г/g, 'G'],
+                    [/д/g, 'd'], [/Д/g, 'D'],
+                    [/з/g, 'z'], [/З/g, 'Z'],
+                    [/и/g, 'i'], [/И/g, 'I'],
+                    [/й/g, 'j'], [/Й/g, 'J'],
+                    [/к/g, 'k'], [/К/g, 'K'],
+                    [/м/g, 'm'], [/М/g, 'M'],
+                    [/н/g, 'n'], [/Н/g, 'N'],
+                    [/о/g, 'o'], [/О/g, 'O'],
+                    [/п/g, 'p'], [/П/g, 'P'],
+                    [/р/g, 'r'], [/Р/g, 'R'],
+                    [/с/g, 's'], [/С/g, 'S'],
+                    [/т/g, 't'], [/Т/g, 'T'],
+                    [/у/g, 'u'], [/У/g, 'U'],
+                    [/ф/g, 'f'], [/Ф/g, 'F'],
+                    [/ы/g, 'y'], [/Ы/g, 'Y'],
+                    [/а/g, 'a'], [/А/g, 'A'],
+                    [/б/g, 'b'], [/Б/g, 'B'],
+                    [/[ьъ]/g, '']
+                ];
+                rules.forEach(([rx, rep]) => { s = s.replace(rx, rep); });
+                return s;
+            }
+
+            variants.add(cyrToPolishPhonetic(q, true));
+            variants.add(cyrToPolishPhonetic(q, false));
+            variants.add(translitCyrToLat(mappedQ));
+
+            // Если в запросе несколько слов через запятую, добавляем также первое слово + страну
+            const parts = mappedQ.split(',').map(p => p.trim()).filter(Boolean);
+            if (parts.length >= 2) {
+                variants.add(`${cyrToPolishPhonetic(parts[0], true)}, ${parts[parts.length - 1]}`);
+                variants.add(`${cyrToPolishPhonetic(parts[0], false)}, ${parts[parts.length - 1]}`);
+            }
+            if (parts.length >= 1) {
+                variants.add(cyrToPolishPhonetic(parts[0], true));
+                variants.add(cyrToPolishPhonetic(parts[0], false));
+            }
+
+            return Array.from(variants).filter(v => v && v.length >= 2);
+        }
+
+        // Умный многоступенчатый поиск населённых пунктов (понимает русский, украинский, польский, немецкий даже для малых сёл!)
+        async function searchAnyPlace() {
+            const q = document.getElementById('globalSearchInput').value.trim();
+            if (!q) return;
+            const badge = document.getElementById('currentLocBadge');
+            badge.innerText = `⏳ Поиск "${q}"...`;
+
+            const candidateQueries = buildCyrillicSearchFallbacks(q);
+
+            try {
+                for (const candidate of candidateQueries) {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(candidate)}&limit=8&accept-language=${currentLang},pl,uk,ru,de,en`);
+                    const data = await res.json();
+                    if (data && data.length > 0) {
+                        let best = data.find(item =>
+                            item.class === 'place' ||
+                            item.class === 'boundary' ||
+                            item.class === 'waterway' ||
+                            item.class === 'historic' ||
+                            /city|town|village|hamlet|suburb|administrative|river|island/i.test(item.type || '')
+                        ) || data[0];
+
+                        const lat = parseFloat(best.lat);
+                        const lon = parseFloat(best.lon);
+                        const addr = best.address || {};
+                        const cleanName = addr.village || addr.town || addr.city || addr.hamlet || addr.municipality || best.display_name.split(',')[0].replace(/Punkt Poboru Opłat/i, '').trim();
+                        exploreWorldPoint(lat, lon, cleanName);
+                        return;
+                    }
+                }
+
+                // Резервный поиск координат через Wikipedia API (если в OpenStreetMap вообще нет такого написания)
+                const wikiLangs = ['ru', 'uk', 'pl', 'de', 'en'];
+                for (const wLang of wikiLangs) {
+                    const firstPart = q.split(',')[0].trim();
+                    const wData = await fetchWikimediaJsonp(`https://${wLang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(firstPart)}&gsrlimit=5&prop=coordinates`);
+                    if (wData && wData.query && wData.query.pages) {
+                        const pageWithCoords = Object.values(wData.query.pages).find(p => p.coordinates && p.coordinates[0]);
+                        if (pageWithCoords) {
+                            const c = pageWithCoords.coordinates[0];
+                            const cleanWikiTitle = pageWithCoords.title.replace(/\s*\([^)]*\)/g, '').trim();
+                            exploreWorldPoint(c.lat, c.lon, cleanWikiTitle);
+                            return;
+                        }
+                    }
+                }
+
+                badge.innerText = `⚠️ Не найдено: ${q}`;
+            } catch (err) {
+                badge.innerText = `⚠️ Ошибка сети`;
+            }
+        }
+
+        function locateUserGPS() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => { exploreWorldPoint(pos.coords.latitude, pos.coords.longitude, null); },
+                    () => { exploreWorldPoint(54.2611, 18.6361, null); }
+                );
+            }
+        }
+
+        function cleanHistoricalRegionName(rawState) {
+            if (!rawState) return '';
+            let s = rawState
+                .replace(/\b(Voivodeship|Oblast|Province|Region|Governorate|County|District|State|Department|Krai)\b/gi, '')
+                .trim();
+            if (/^Pomeranian$/i.test(s)) s = 'Pomerania';
+            if (/^Masovian$/i.test(s)) s = 'Masovia';
+            if (/^Lesser Poland$/i.test(s)) s = 'Galicia Poland';
+            if (/^Greater Poland$/i.test(s)) s = 'Posnania Poland';
+            if (/^Silesian$/i.test(s)) s = 'Silesia';
+            if (/^Lower Silesian$/i.test(s)) s = 'Lower Silesia';
+            if (/^Warmian-Masurian$/i.test(s)) s = 'East Prussia';
+            if (/^West Pomeranian$/i.test(s)) s = 'Pomerania';
+            return s;
+        }
+
+        const TOPONYM_STOPWORDS = new Set([
+            'polska', 'polsce', 'polski', 'polską', 'poland', 'polen', 'польша', 'польше', 'польши',
+            'ukraina', 'ukrainie', 'ukraine', 'украина', 'украине', 'україна', 'україні',
+            'niemcy', 'niemczech', 'germany', 'deutschland', 'германия', 'германии',
+            'rosja', 'rosji', 'russia', 'россия', 'россии', 'prussia', 'prusy', 'preußen', 'пруссия',
+            'województwo', 'województwie', 'powiat', 'powiecie', 'gmina', 'gminie', 'wieś', 'wsi', 'miasto',
+            'pomorze', 'pomerania', 'pomorskie', 'pomorskim', 'masovia', 'mazowsze', 'silesia', 'śląsk', 'galicia',
+            'гданьского', 'гданьский', 'варшава', 'warszawa', 'warsaw',
+            'село', 'город', 'река', 'область', 'район', 'воеводство', 'повят', 'гмина', 'также', 'ранее',
+            'between', 'from', 'until', 'since', 'under', 'part', 'kingdom', 'empire', 'republic', 'district', 'county',
+            'населения', 'площадь', 'центр', 'состав', 'года', 'году', 'годах', 'носил', 'название', 'крупнейший'
+        ]);
+
+        // Словарь транслитерации кириллицы в латиницу (чтобы "Александровск" -> "Aleksandrovsk" для Викисклада)
+        function translitCyrToLat(word) {
+            if (!word || !/[А-Яа-яЁёІіЇїЄєҐґ]/.test(word)) return '';
+            const map = {
+                'а':'a','б':'b','в':'v','г':'g','ґ':'g','д':'d','е':'e','ё':'e','є':'ye','ж':'zh','з':'z',
+                'и':'i','і':'i','ї':'yi','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
+                'с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'',
+                'ы':'y','ь':'','э':'e','ю':'yu','я':'ya'
+            };
+            return word.split('').map(ch => {
+                const low = ch.toLowerCase();
+                if (!(low in map)) return ch;
+                const tr = map[low];
+                return ch === low ? tr : (tr.charAt(0).toUpperCase() + tr.slice(1));
+            }).join('');
+        }
+
+        // База ключевых исторических экзонимов и архивных написаний для 100% попадания по старым картам
+        const HISTORICAL_EXONYMS_DB = {
+            'гданьск': ['Danzig', 'Gdańsk', 'Gdansk', 'Gedanum'],
+            'gdańsk': ['Danzig', 'Gdansk', 'Gedanum'],
+            'gdansk': ['Danzig', 'Gdańsk', 'Gedanum'],
+            'запорожье': ['Александровск', 'Aleksandrovsk', 'Alexandrovsk', 'Хортица', 'Khortytsia', 'Zaporizhzhia'],
+            'запоріжжя': ['Олександрівськ', 'Александровск', 'Aleksandrovsk', 'Alexandrovsk', 'Хортиця'],
+            'zaporizhia': ['Aleksandrovsk', 'Alexandrovsk', 'Александровск', 'Khortytsia'],
+            'zaporizhzhia': ['Aleksandrovsk', 'Alexandrovsk', 'Александровск', 'Khortytsia'],
+            'киев': ['Kiev', 'Kiew', 'Kijów', 'Киев', 'Кіевъ', 'Kyiv'],
+            'київ': ['Kiev', 'Kiew', 'Kijów', 'Киев', 'Kyiv'],
+            'kyiv': ['Kiev', 'Kiew', 'Kijów', 'Киев'],
+            'львов': ['Lwów', 'Lemberg', 'Lvov', 'Leopolis', 'Львов'],
+            'львів': ['Lwów', 'Lemberg', 'Lvov', 'Leopolis'],
+            'lviv': ['Lwów', 'Lemberg', 'Lvov'],
+            'краков': ['Krakau', 'Kraków', 'Cracow', 'Cracovia'],
+            'kraków': ['Krakau', 'Cracow', 'Cracovia', 'Krakow'],
+            'вроцлав': ['Breslau', 'Wrocław', 'Wroclaw', 'Vratislavia'],
+            'wrocław': ['Breslau', 'Wroclaw', 'Vratislavia'],
+            'щецин': ['Stettin', 'Szczecin', 'Sedinum'],
+            'szczecin': ['Stettin', 'Sedinum'],
+            'калининград': ['Königsberg', 'Koenigsberg', 'Кёнигсберг', 'Królewiec'],
+            'одесса': ['Odessa', 'Одесса', 'Хаджибей'],
+            'харків': ['Kharkov', 'Харьков', 'Charkow'],
+            'харьков': ['Kharkov', 'Харьков', 'Charkow'],
+            'дніпро': ['Екатеринослав', 'Ekaterinoslav', 'Yekaterinoslav', 'Катеринослав'],
+            'днепр': ['Екатеринослав', 'Ekaterinoslav', 'Yekaterinoslav'],
+            'прущ-гданьский': ['Praust', 'Pruszcz Gdański'],
+            'pruszcz gdański': ['Praust', 'Pruszcz'],
+            'ленгово': ['Langenau', 'Łęgowo'],
+            'łęgowo': ['Langenau', 'Łęgowo'],
+            'русочин': ['Russotschin', 'Rusocin'],
+            'rusocin': ['Russotschin', 'Rusocin'],
+            'страшин': ['Straschin', 'Straszyn'],
+            'straszyn': ['Straschin', 'Straszyn']
+        };
+
+        function isValidHistoricalToponym(word) {
+            if (!word || word.length < 3 || word.length > 26) return false;
+            const clean = word.replace(/[^A-Za-zÄÖÜäöüßŚĆŻŹŁŃśćżźłńА-Яа-яЁёІіЇїЄєҐґ\-\s]/g, '').trim();
+            if (clean.length < 3) return false;
+            if (TOPONYM_STOPWORDS.has(clean.toLowerCase())) return false;
+            if (/^(Województwo|Powiat|Gmina|Pomorskie|Gdański|Polska|Polsce|Niemcy|Deutschland)$/i.test(clean)) return false;
+            return true;
+        }
+
+        // Расширенный парсер исторических названий (ловит "до XXXX года — ...", "нем. ...", скобки и экзонимы)
+        function extractOldNamesFromWikiText(text) {
+            const found = new Set();
+
+            // 1. Сначала проверяем словарь известных исторических экзонимов
+            [currentPlaceLocalName, currentPlaceIntlCity].filter(Boolean).forEach(nameKey => {
+                const lowKey = nameKey.toLowerCase().trim();
+                if (HISTORICAL_EXONYMS_DB[lowKey]) {
+                    HISTORICAL_EXONYMS_DB[lowKey].forEach(ex => found.add(ex));
+                }
+            });
+
+            if (text) {
+                const intro = text.slice(0, 900);
+
+                // 2. Конструкции вида "до 1921 года — Александровск", "до 1945 — Данциг", "ранее — ..."
+                const untilYearRegex = /(?:до\s+\d{4}(?:\s*[-—]\s*\d{4})?\s*(?:года|годов|р\.|року|r\.)?|ранее|бывш[а-я\.]*|dawniej|formerly)(?:\s+носил\s+название|\s+назывался)?\s*[—\-:]?\s*([A-ZÄÖÜŚĆŻŹŁА-ЯЁІЇЄҐ][a-zäöüßśćżźńłа-яёіїєґ\u0301\-]{3,22})/gi;
+                let mUntil;
+                while ((mUntil = untilYearRegex.exec(intro)) !== null) {
+                    const cleanW = mUntil[1].replace(/\u0301/g, '').trim();
+                    if (isValidHistoricalToponym(cleanW)) {
+                        found.add(cleanW);
+                        const latTr = translitCyrToLat(cleanW);
+                        if (latTr && isValidHistoricalToponym(latTr)) found.add(latTr);
+                    }
+                }
+
+                // 3. Явные языковые маркеры: (нем. Danzig, укр. Олександрівськ, пол. ..., лат. ...)
+                const markerRegex = /(?:нем\.|niem\.|нем:|ger\.|german:?|dawniej|formerly|hist\.|кашуб\.|kaszb\.|латин\.|лат\.|пол\.|укр\.)\s*[:\-—]?\s*([A-ZÄÖÜŚĆŻŹŁА-ЯЁІЇЄҐ][a-zäöüßśćżźńłа-яёіїєґ\u0301\-]{2,22})/gi;
+                let m;
+                while ((m = markerRegex.exec(intro)) !== null) {
+                    const candidate = m[1].replace(/\u0301/g, '').trim();
+                    if (isValidHistoricalToponym(candidate)) {
+                        found.add(candidate);
+                        const latTr = translitCyrToLat(candidate);
+                        if (latTr && isValidHistoricalToponym(latTr)) found.add(latTr);
+                    }
+                }
+
+                // 4. Латинские топонимы в скобках первого предложения: "Łęgowo (niem. Langenau)"
+                const firstSentence = intro.split('. ')[0] || '';
+                const parenMatch = firstSentence.match(/\(([^)]{3,160})\)/);
+                if (parenMatch) {
+                    const latinWords = parenMatch[1].match(/[A-ZÄÖÜŚĆŻŹŁ][a-zäöüßśćżźńł\-]{3,20}/g) || [];
+                    latinWords.forEach(w => {
+                        if (isValidHistoricalToponym(w)) found.add(w);
+                    });
+                }
+            }
+
+            return Array.from(found).slice(0, 7);
+        }
+
+        function extractHistoricalSectionText(fullText, fallbackIntro) {
+            if (!fullText) return fallbackIntro || '';
+            const firstPara = fullText.split('\n').filter(p => p.trim().length > 35)[0] || fallbackIntro || '';
+            const histMatch = fullText.match(/==\s*(История|Історія|Historia|Geschichte|Древняя история|Происхождение названия)[^=]*==([\s\S]{80,1800})/i);
+            if (histMatch && histMatch[2]) {
+                const cleanSec = histMatch[2].replace(/===+[^=]+===+/g, ' ').replace(/\n+/g, ' ').trim();
+                return `<b>${firstPara.slice(0, 340)}</b><br><br>📜 <b>Из летописи локации:</b> ${cleanSec.slice(0, 640)}...`;
+            }
+            const paragraphs = fullText.split('\n').filter(p => p.trim().length > 50);
+            const histParas = paragraphs.slice(1).filter(p => /\b(век|ст\.|wiek|Jahrhundert|основан|упоминает|крепост|замок|костёл|колони|поместь|рыцар|1[0-8]\d{2}|19[0-3]\d)\b/i.test(p));
+            if (histParas.length > 0) {
+                return `<b>${firstPara.slice(0, 340)}</b><br><br>📜 <b>Из летописи локации:</b> ${histParas[0].slice(0, 600)}...`;
+            }
+            return paragraphs.slice(0, 2).join('<br><br>').slice(0, 720);
+        }
+
+        async function exploreWorldPoint(lat, lon, explicitName = null) {
+            const reqId = ++currentRequestId;
+            currentCoords = [lat, lon];
+            if (modernMap) {
+                modernMarker.setLatLng(currentCoords);
+                searchCircle.setLatLng(currentCoords);
+                historicCircle.setLatLng(currentCoords);
+                modernMap.setView(currentCoords, 12);
+            }
+
+            const scanImg = document.getElementById('archiveScanImg');
+            if (scanImg) {
+                scanImg.classList.remove('loaded');
+                scanImg.src = '';
+            }
+            document.getElementById('currentLocBadge').innerText = `⏳ Анализ точки...`;
+
+            try {
+                const [resLocal, resEn] = await Promise.all([
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&accept-language=${currentLang}`),
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=13&accept-language=en`)
+                ]);
+                if (reqId !== currentRequestId) return;
+                const dataLocal = await resLocal.json();
+                const dataEn = await resEn.json();
+
+                const addrLoc = dataLocal.address || {};
+                const addrEn = dataEn.address || {};
+
+                currentPlaceLocalName = explicitName || addrLoc.city || addrLoc.town || addrLoc.village || addrLoc.hamlet || addrLoc.municipality || addrLoc.county || `${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E`;
+                currentPlaceIntlCity = addrEn.city || addrEn.town || addrEn.village || addrEn.hamlet || addrEn.municipality || '';
+                currentPlaceIntlCounty = (addrEn.county || '').replace(/\b(County|Powiat|District|Raion)\b/gi, '').trim();
+                currentPlaceIntlState = cleanHistoricalRegionName(addrEn.state || addrEn.region || '');
+                currentPlaceIntlCountry = addrEn.country || '';
+            } catch (e) {
+                if (reqId !== currentRequestId) return;
+                currentPlaceLocalName = explicitName || `${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E`;
+                currentPlaceIntlCity = currentPlaceLocalName;
+                currentPlaceIntlCounty = '';
+            }
+
+            document.getElementById('currentLocBadge').innerText = `📍 ${currentPlaceLocalName}`;
+            await updateGlobalPassportAndMaps(reqId);
+        }
+
+        // ПАРСЕР ИСТОРИЧЕСКОГО ГОДА (проверяет Title, DateTimeOriginal, DateTime, Categories, ImageDescription, ObjectName)
+        function extractStrictHistoricalYear(titleStr, extMeta) {
+            let combined = titleStr || '';
+            if (extMeta) {
+                ['DateTimeOriginal', 'DateTime', 'ObjectName', 'Categories', 'ImageDescription'].forEach(field => {
+                    if (extMeta[field] && extMeta[field].value) {
+                        combined += ' ' + String(extMeta[field].value).replace(/<[^>]+>/g, ' ').slice(0, 400);
+                    }
+                });
+            }
+
+            // Отсекаем файлы, где в самом названии явно указан современный год (1946–2029) и нет старого года
+            const titleModernYears = (titleStr || '').match(/\b(19[4-9]\d|20[0-2]\d)\b/g);
+            const titleHistYears = (titleStr || '').match(/\b(1[0-8]\d{2}|19[0-3]\d|194[0-5])\b/g);
+            if (titleModernYears && !titleHistYears) {
+                return null;
+            }
+
+            // 1. Точный исторический год (1000–1945) прямо в названии файла (высший приоритет)
+            if (titleHistYears && titleHistYears.length > 0) {
+                for (const yStr of titleHistYears) {
+                    const y = parseInt(yStr, 10);
+                    if (y >= 1000 && y <= 1945) return y;
+                }
+            }
+
+            // 2. Точный исторический год (1000–1945) в метаданных / категориях / описании
+            const metaHistYears = combined.match(/\b(1[0-8]\d{2}|19[0-3]\d|194[0-5])\b/g);
+            if (metaHistYears && metaHistYears.length > 0) {
+                for (const yStr of metaHistYears) {
+                    const y = parseInt(yStr, 10);
+                    if (y >= 1000 && y <= 1945) return y;
+                }
+            }
+
+            // 3. Явное указание исторического века (12th–19th century / XV–XIX w. / Jh.)
+            const centuryEn = combined.match(/\b(1[1-9])th[-_\s]?(?:century|c\.)\b/i);
+            if (centuryEn) {
+                const c = parseInt(centuryEn[1], 10);
+                const y = (c - 1) * 100 + 50;
+                if (y <= 1945) return y;
+            }
+            const romanMap = { 'XII': 1150, 'XIII': 1250, 'XIV': 1350, 'XV': 1450, 'XVI': 1550, 'XVII': 1650, 'XVIII': 1750, 'XIX': 1850 };
+            const romanMatch = combined.match(/\b(XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX)\s*(?:wiek|w\.|ст\.|век|Jh\.)/i);
+            if (romanMatch && romanMap[romanMatch[1].toUpperCase()]) {
+                return romanMap[romanMatch[1].toUpperCase()];
+            }
+
+            // 4. Известные исторические картографы и атласы (если год не написан цифрой, но указан автор XVI–XIX вв.)
+            if (/\b(Merian|Blaeu|Ortelius|Mercator|Homann|Seutter|Lotter|Speed|Münster|Schedel|Waghenaer|Hondius|Janssonius)\b/i.test(combined)) {
+                return 1650;
+            }
+            if (/\b(Meyers|Brockhaus|Baedeker|Reymann|Messtischblatt|Шуберт|Стрельбицкий|Трёхверстовка)\b/i.test(combined)) {
+                return 1890;
+            }
+
+            return null;
+        }
+
+        function isCleanHistoricalObject(title) {
+            return !/ракетн|удар|обстрел|война\s+в|выборы|чемпионат|происшеств|катастроф|дтп|covid|остановочный пункт|toll|poboru opłat/i.test(title);
+        }
+
+        function isDisambiguationPage(page, extractText) {
+            if (!page) return true;
+            if (page.pageprops && ('disambiguation' in page.pageprops)) return true;
+            const t = (page.title || '').toLowerCase();
+            if (t.includes('значения') || t.includes('ujednoznacznienie') || t.includes('disambiguation') || t.includes('begriffsklärung') || t.includes('значення')) return true;
+            if (extractText && /^[^.\n]{0,140}(ряд населённых пунктов|многозначный термин|w Polsce:|список значень|may refer to|steht für:)/i.test(extractText.trim())) return true;
+            return false;
+        }
+
+        // ИСПРАВЛЕННЫЙ ПОИСК СТАТЬИ О НАСЕЛЁННОМ ПУНКТЕ (Никогда не берет Консерваторию вместо Киева!)
+        async function fetchBestCityArticle(wikiLang, lat, lon) {
+            const langPriority = Array.from(new Set([
+                wikiLang,
+                currentPlaceIntlCountry === 'Poland' ? 'pl' : (currentPlaceIntlCountry === 'Ukraine' ? 'uk' : (currentPlaceIntlCountry === 'Germany' ? 'de' : 'en')),
+                'pl', 'uk', 'ru', 'de', 'en'
+            ]));
+
+            const targetNames = [currentPlaceLocalName, currentPlaceIntlCity]
+                .filter(Boolean)
+                .map(n => n.toLowerCase().replace(/\s*\([^)]*\)/g, '').trim());
+
+            // Шаг 1: Сначала ищем точное совпадение названия населённого пункта в geosearch (радиус 5 км)
+            // Для малых сёл ("Łęgowo (powiat gdański)") это сразу находит точный географический pageid именно этого села!
+            // Для крупных городов ("Киев", "Гданьск") это игнорирует "Киевскую консерваторию" и берет только сам город!
+            for (const lang of langPriority) {
+                try {
+                    const geoRes = await fetchWikimediaJsonp(`https://${lang}.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=5000&gslimit=15`);
+                    const items = (geoRes && geoRes.query && geoRes.query.geosearch) ? geoRes.query.geosearch : [];
+                    if (items.length === 0) continue;
+
+                    // Строгая проверка: название статьи без скобок должно совпадать с названием города/села!
+                    const matchedGeo = items.find(it => {
+                        const cleanIt = it.title.toLowerCase().replace(/\s*\([^)]*\)/g, '').trim();
+                        return targetNames.some(tn => cleanIt === tn);
+                    });
+
+                    if (matchedGeo && matchedGeo.pageid) {
+                        const pageData = await fetchWikimediaJsonp(`https://${lang}.wikipedia.org/w/api.php?action=query&pageids=${matchedGeo.pageid}&prop=extracts|pageprops&explaintext=1&redirects=1`);
+                        if (pageData && pageData.query && pageData.query.pages) {
+                            const page = pageData.query.pages[matchedGeo.pageid] || Object.values(pageData.query.pages)[0];
+                            if (page && page.extract && page.extract.length > 70 && !isDisambiguationPage(page, page.extract)) {
+                                return { text: page.extract, sourceLang: lang, title: page.title };
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            // Шаг 2: Прямой поиск статьи по названию населённого пункта (с уточнением повята для сёл и защитой от Disambiguation)
+            const directQueries = [];
+            if (currentPlaceIntlCity && currentPlaceIntlCounty) {
+                directQueries.push({ lang: 'pl', title: `${currentPlaceIntlCity} (powiat ${currentPlaceIntlCounty.toLowerCase()})` });
+                directQueries.push({ lang: wikiLang, title: `${currentPlaceLocalName} (${currentPlaceIntlCounty})` });
+            }
+            langPriority.forEach(l => {
+                if (currentPlaceLocalName) directQueries.push({ lang: l, title: currentPlaceLocalName });
+                if (currentPlaceIntlCity) directQueries.push({ lang: l, title: currentPlaceIntlCity });
+            });
+
+            for (const cand of directQueries) {
+                try {
+                    const data = await fetchWikimediaJsonp(`https://${cand.lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(cand.title)}&prop=extracts|pageprops&explaintext=1&redirects=1`);
+                    if (data && data.query && data.query.pages) {
+                        const page = Object.values(data.query.pages)[0];
+                        if (page && page.extract && page.extract.length > 80 && !isDisambiguationPage(page, page.extract)) {
+                            return { text: page.extract, sourceLang: cand.lang, title: page.title };
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            return { text: '', sourceLang: wikiLang, title: currentPlaceLocalName };
+        }
+
+        async function updateGlobalPassportAndMaps(reqId) {
+            const wikiLang = currentLang === 'ua' ? 'uk' : currentLang;
+            const lat = currentCoords[0];
+            const lon = currentCoords[1];
+            const t = i18n[currentLang];
+
+            let geoList = [];
+            try {
+                const backupLang = currentPlaceIntlCountry === 'Poland' ? 'pl' : (currentPlaceIntlCountry === 'Germany' ? 'de' : 'en');
+                const [geoData, geoDataBackup] = await Promise.all([
+                    fetchWikimediaJsonp(`https://${wikiLang}.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=10000&gslimit=14`),
+                    wikiLang !== backupLang
+                        ? fetchWikimediaJsonp(`https://${backupLang}.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=10000&gslimit=12`)
+                        : Promise.resolve(null)
+                ]);
+                if (reqId !== currentRequestId) return;
+
+                if (geoData && geoData.query && geoData.query.geosearch) {
+                    geoList = geoData.query.geosearch.filter(item => isCleanHistoricalObject(item.title));
+                }
+                if (geoDataBackup && geoDataBackup.query && geoDataBackup.query.geosearch) {
+                    geoDataBackup.query.geosearch.forEach(bItem => {
+                        if (isCleanHistoricalObject(bItem.title) && !geoList.some(g => Math.abs(g.lat - bItem.lat) < 0.002)) {
+                            geoList.push({ ...bItem, backupLang });
+                        }
+                    });
+                }
+            } catch(e) {}
+
+            if (reqId !== currentRequestId) return;
+
+            currentPinsList = [];
+            geoList.slice(0, 8).forEach((item, idx) => {
+                const pType = idx < 2 ? 'fact' : (idx < 5 ? 'hypo' : 'myth');
+                const sym = pType === 'fact' ? '🟢' : (pType === 'hypo' ? '🟡' : '🔴');
+                const cleanTitleNoParen = item.title.replace(/\s*\([^)]*\)/g, '').trim();
+                const shortWords = cleanTitleNoParen.split(/[\s,]+/).slice(0, 2).join(' ');
+                currentPinsList.push({
+                    type: pType,
+                    coords: [item.lat, item.lon],
+                    shortLabel: `${sym} ${shortWords}`,
+                    fullLabel: `${sym} ${item.title}`,
+                    pageid: item.pageid
+                });
+            });
+
+            if (currentPinsList.length === 0) {
+                currentPinsList.push({
+                    type: 'fact',
+                    coords: [lat, lon],
+                    shortLabel: `🟢 ${currentPlaceLocalName.split(' ')[0]}`,
+                    fullLabel: `🟢 ${currentPlaceLocalName}`
+                });
+            }
+
+            renderHistoricalPins();
+
+            const [articlesMapRes, cityArticleObj] = await Promise.all([
+                (async () => {
+                    const primaryIds = geoList.filter(g => !g.backupLang).slice(0, 5).map(g => g.pageid).join('|');
+                    if (!primaryIds) return {};
+                    const extData = await fetchWikimediaJsonp(`https://${wikiLang}.wikipedia.org/w/api.php?action=query&pageids=${primaryIds}&prop=extracts&exintro=1&explaintext=1`);
+                    return (extData && extData.query && extData.query.pages) ? extData.query.pages : {};
+                })(),
+                fetchBestCityArticle(wikiLang, lat, lon)
+            ]);
+
+            if (reqId !== currentRequestId) return;
+
+            const articlesMap = articlesMapRes || {};
+            const mainCityFullText = cityArticleObj.text;
+
+            extractedHistoricalNames = extractOldNamesFromWikiText(mainCityFullText);
+            if (currentPlaceIntlCity && isValidHistoricalToponym(currentPlaceIntlCity) && !extractedHistoricalNames.includes(currentPlaceIntlCity)) {
+                extractedHistoricalNames.unshift(currentPlaceIntlCity);
+            }
+
+            const OrderedExtracts = geoList.slice(0, 6).map(g => {
+                const p = articlesMap[g.pageid];
+                return { title: g.title, text: (p && p.extract) ? p.extract : '' };
+            }).filter(x => x.text.length > 20 && x.title.toLowerCase() !== currentPlaceLocalName.toLowerCase());
+
+            const richHistoryText = extractHistoricalSectionText(
+                mainCityFullText,
+                OrderedExtracts[0] ? `${OrderedExtracts[0].title}: ${OrderedExtracts[0].text}` : `${currentPlaceLocalName}`
+            );
+
+            const block2Item = OrderedExtracts[0];
+            const block2Text = block2Item ? `<b>${block2Item.title}:</b> ${block2Item.text}` : `${currentPlaceLocalName}`;
+            const block3Item = OrderedExtracts[1] || OrderedExtracts[0];
+            const block3Text = block3Item ? `<b>${block3Item.title}:</b> ${block3Item.text}` : `${currentPlaceLocalName}`;
+
+            const trimText = (str, maxLen = 480) => str.length > maxLen ? str.slice(0, maxLen) + '...' : str;
+
+            document.getElementById('triangulationNote').innerText = t.triangNote;
+
+            const panel = document.getElementById('passportPanel');
+            const nearbyNames = geoList.map(g => g.title).slice(0, 5).join(' • ') || currentPlaceLocalName;
+            const aliasesHtml = extractedHistoricalNames.length > 0
+                ? `<div class="hist-aliases">🕰️ <b>Исторические / архивные топонимы:</b> ${extractedHistoricalNames.join(', ')}</div>`
+                : '';
+
+            panel.innerHTML = `
+                <div class="passport-section">
+                    <h3>🏛️ ${t.sovereignty}</h3>
+                    <p><b>📍 ${currentPlaceLocalName}</b> (${currentPlaceIntlCounty ? currentPlaceIntlCounty + ', ' : ''}${currentPlaceIntlState ? currentPlaceIntlState + ', ' : ''}${currentPlaceIntlCountry})</p>
+                    ${aliasesHtml}
+                    <p style="margin-top:6px;"><b>${t.names}</b> ${nearbyNames}</p>
+                    <div class="source-ref" id="activeMapRefBox">📜 <b>${t.mapSourceLabel}</b> Поиск датированных карт (до 1945 г.)...</div>
+                </div>
+
+                <div class="passport-section clickable-card" onclick="flyToMarkerType('fact')">
+                    <h3 class="tag-fact">${t.mainHistoryTitle} <span class="fly-hint">${t.flyToPin}</span></h3>
+                    <p>${richHistoryText}</p>
+                    <div class="source-ref">📚 ${t.source} Wikipedia GeoPageID (${cityArticleObj.sourceLang}.wikipedia.org — ${cityArticleObj.title})</div>
+                </div>
+
+                <div class="passport-section clickable-card" onclick="flyToMarkerType('hypo')">
+                    <h3 class="tag-hypo">${t.monumentsTitle} <span class="fly-hint">${t.flyToPin}</span></h3>
+                    <p>${trimText(block2Text, 460)}</p>
+                    <div class="source-ref">📚 ${t.source} GeoSearch (Радиус 10 км)</div>
+                </div>
+
+                <div class="passport-section clickable-card" onclick="flyToMarkerType('myth')">
+                    <h3 class="tag-myth">${t.surroundingsTitle} <span class="fly-hint">${t.flyToPin}</span></h3>
+                    <p>${trimText(block3Text, 460)}</p>
+                    <div class="source-ref">📚 ${t.source} Региональная энциклопедическая база</div>
+                </div>
+            `;
+
+            document.getElementById('modern-label').innerText = t.modernLabel;
+            document.getElementById('globalSearchInput').placeholder = t.searchPlaceholder;
+            document.getElementById('searchBtn').innerText = t.searchBtn;
+            document.getElementById('tabMapBtn').innerText = t.tabMap;
+            document.getElementById('tabScanBtn').innerText = t.tabScan;
+            document.getElementById('tabOverlayBtn').innerText = t.tabOverlay;
+            document.getElementById('tabSwipeBtn').innerText = t.tabSwipe;
+            document.getElementById('opacityLabelText').innerText = t.opacityLabel;
+            document.getElementById('yearInputLabel').innerText = t.yearLabel;
+            document.getElementById('warpToggleBtn').innerText = isWarpMode ? t.modeWarpScan : t.modeMoveMap;
+
+            await fetchAllHistoricalMapsWithYears(reqId);
+        }
+
+        // ЖЁСТКИЙ JS-ФИЛЬТР КАРТ WIKIMEDIA COMMONS (отсекает фото зданий, ЛЭП, фонтанов, гербов и современные схемы 1946–2026)
+        const COMMONS_GARBAGE_REGEX = /flag|coat_of_arms|herb|wappen|logo|locator|location_map|outline_map|blank_map|symbol|stamp|coin|banknote|medal|portrait|photo|photograph|demography|election|census|population|building|church|kirche|kościół|cathedral|chapel|synagogue|mosque|station|bahnhof|dworzec|fountain|brunnen|fontanna|power|transmission|pylon|mast|tower|turm|wieża|street|ulica|straße|aerial|drone|satellite|modern|battle_of|offensive|frontline|military_situation|201\d|202\d|19[5-9]\d|view_of|panorama|monument|statue|memorial|pomnik|denkmal|bridge|most|brücke|cemetery|friedhof|cmentarz|palace|pałac|schloss|castle_ruin|train|tram|bus|park|garden|painting|grave|tomb|plaque|inscription|seal|banner|diagram|graph|chart_of|municipality_map|powiat_locator|gmina_locator|administrative|subdivisions|districts_of|raions_of/i;
+
+        const POSITIVE_MAP_TITLE_REGEX = /(map|maps|plan|plans|karte|karten|stadtplan|mapa|mapy|atlas|tabula|chart|topograph|messtischblatt|kreiskarte|спецкарта|карта|карты|план|планы|атлас|чертеж|чертёж)/i;
+
+        // Простые и 100% совместимые с CirrusSearch запросы к gsrnamespace=6, а вся жёсткая фильтрация выполняется в JS
+        async function runCommonsBatchQueries(rawSearchTerms, seenUrls, scaleTag) {
+            const datedFound = [];
+            const undatedBackup = [];
+
+            const promises = rawSearchTerms.map(term => {
+                const fullSearch = `filetype:bitmap ${term}`;
+                const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(fullSearch)}&gsrlimit=15&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=1280`;
+                return fetchWikimediaJsonp(apiUrl);
+            });
+
+            const results = await Promise.all(promises);
+            results.forEach(data => {
+                if (!data || !data.query || !data.query.pages) return;
+                Object.values(data.query.pages).forEach(p => {
+                    if (!p.imageinfo || !p.imageinfo[0]) return;
+                    const info = p.imageinfo[0];
+                    const imgUrl = info.thumburl || info.url;
+                    const origUrl = info.url || imgUrl;
+                    const cleanTitle = (p.title || '').replace(/^File:/i, '').replace(/\.(jpg|jpeg|png|svg|tif|tiff|gif)$/i, '');
+
+                    if (!imgUrl || seenUrls.has(imgUrl)) return;
+
+                    const catVal = (info.extmetadata && info.extmetadata.Categories && info.extmetadata.Categories.value)
+                        ? String(info.extmetadata.Categories.value)
+                        : '';
+                    const descVal = (info.extmetadata && info.extmetadata.ImageDescription && info.extmetadata.ImageDescription.value)
+                        ? String(info.extmetadata.ImageDescription.value).replace(/<[^>]+>/g, ' ')
+                        : '';
+
+                    // 1. В заголовке или категориях обязательно должно быть слово map/plan/karte/mapa/atlas/карта/план
+                    if (!POSITIVE_MAP_TITLE_REGEX.test(cleanTitle) && !POSITIVE_MAP_TITLE_REGEX.test(catVal)) return;
+
+                    // 2. Жёсткий бан-лист против фото зданий, костёлов, ЛЭП, фонтанов, схем выборов и современных боёв
+                    if (COMMONS_GARBAGE_REGEX.test(cleanTitle)) return;
+                    if (/\b(201\d|202\d|Russian invasion|power line|fountain|church building|train station|modern map|locator map)\b/i.test(descVal + ' ' + catVal)) return;
+
+                    // 3. Строгий парсинг реального исторического года <= 1945
+                    const strictYear = extractStrictHistoricalYear(cleanTitle, info.extmetadata);
+                    if (strictYear !== null && strictYear <= 1945) {
+                        seenUrls.add(imgUrl);
+                        datedFound.push({
+                            url: imgUrl,
+                            origUrl: origUrl,
+                            title: cleanTitle,
+                            year: strictYear,
+                            scaleTag: scaleTag
+                        });
+                    } else if (!/\b(19[4-9]\d|20[0-2]\d)\b/.test(cleanTitle + ' ' + catVal)) {
+                        // Если в файле явно есть Old maps / Historical maps в категориях, но точный год не распарсился — держим в резерве
+                        if (/old maps|historical maps|maps of .* history|1[6-9]th-century maps/i.test(catVal + ' ' + cleanTitle)) {
+                            seenUrls.add(imgUrl);
+                            undatedBackup.push({
+                                url: imgUrl,
+                                origUrl: origUrl,
+                                title: cleanTitle,
+                                year: 1850,
+                                isApproxEpoch: true,
+                                scaleTag: scaleTag
+                            });
+                        }
+                    }
+                });
+            });
+
+            return { datedFound, undatedBackup };
+        }
+
+        async function fetchAllHistoricalMapsWithYears(reqId) {
+            const loader = document.getElementById('scanLoadingBadge');
+            const galInfo = document.getElementById('galInfoText');
+            const scanImg = document.getElementById('archiveScanImg');
+
+            loader.classList.add('visible');
+            galInfo.innerText = `⏳ Поиск подлинных карт (до 1945 г.)...`;
+
+            const city = (currentPlaceIntlCity || currentPlaceLocalName || '').replace(/\s*\([^)]*\)/g, '').trim();
+            const localCity = (currentPlaceLocalName || '').replace(/\s*\([^)]*\)/g, '').trim();
+            const county = currentPlaceIntlCounty || '';
+            const state = currentPlaceIntlState || '';
+
+            // Собираем ВСЕ уникальные исторические имена города (включая Danzig, Александровск, Aleksandrovsk, Kiev и т.д.)
+            const allNames = Array.from(new Set([
+                city,
+                ...extractedHistoricalNames,
+                localCity
+            ].filter(n => n && n.length >= 3)));
+
+            const seenUrls = new Set();
+            let collectedScans = [];
+            let backupUndated = [];
+
+            // СТУПЕНЬ 1 (Локальная): Формируем простые совместимые запросы по ВСЕМ историческим именам города/села
+            const tier1Queries = [];
+            allNames.forEach(name => {
+                if (/^[A-Za-zÄÖÜäöüßŚĆŻŹŁŃśćżźłń\s\-]+$/.test(name)) {
+                    tier1Queries.push(`map ${name}`);
+                    tier1Queries.push(`plan ${name}`);
+                    tier1Queries.push(`karte ${name}`);
+                } else {
+                    tier1Queries.push(`план ${name}`);
+                    tier1Queries.push(`карта ${name}`);
+                }
+            });
+
+            if (tier1Queries.length > 0) {
+                const res1 = await runCommonsBatchQueries(tier1Queries.slice(0, 12), seenUrls, 'Локальная');
+                if (reqId !== currentRequestId) return;
+                collectedScans.push(...res1.datedFound);
+                backupUndated.push(...res1.undatedBackup);
+            }
+
+            // СТУПЕНЬ 2 (Уезд / Повят и Исторический регион): если по самому населённому пункту нашлось меньше 5 датированных карт
+            if (collectedScans.length < 5) {
+                const tier2Queries = [
+                    county ? `map ${county}` : '',
+                    county ? `karte ${county}` : '',
+                    state ? `map ${state} 18th` : '',
+                    state ? `map ${state} 19th` : '',
+                    state ? `old map ${state}` : '',
+                    state ? `karte ${state}` : ''
+                ].filter(Boolean);
+
+                if (tier2Queries.length > 0) {
+                    const res2 = await runCommonsBatchQueries(tier2Queries, seenUrls, 'Регион');
+                    if (reqId !== currentRequestId) return;
+                    collectedScans.push(...res2.datedFound);
+                    backupUndated.push(...res2.undatedBackup);
+                }
+            }
+
+            // Если точных датированных карт мало (< 2), дополняем проверенными архивными картами из резерва
+            if (collectedScans.length < 2 && backupUndated.length > 0) {
+                collectedScans.push(...backupUndated.slice(0, 6));
+            }
+
+            // Сортируем строго по историческому году
+            collectedScans.sort((a, b) => a.year - b.year);
+            currentArchiveScans = collectedScans;
+            loader.classList.remove('visible');
+
+            renderGoldMilestonesUI();
+
+            if (currentArchiveScans.length > 0) {
+                snapToNearestMapByYear(selectedYear);
+            } else {
+                scanImg.classList.remove('loaded');
+                scanImg.src = '';
+                galInfo.innerText = `⚠️ Нет датированных карт (≤1945 г.)`;
+                document.getElementById('epochBadge').innerText = `Нет карт ≤1945`;
+                document.getElementById('nearestYearHint').innerText = `0 карт`;
+                const refBox = document.getElementById('activeMapRefBox');
+                if (refBox) {
+                    refBox.innerHTML = `📜 <b>Архив Wikimedia:</b> Для данной точки не найдено оцифрованных карт с подтверждённой датой до 1945 г.`;
+                }
+            }
+        }
+
+        function renderGoldMilestonesUI() {
+            const bar = document.getElementById('goldMilestonesBar');
+            const ticksLayer = document.getElementById('tickMarksLayer');
+            bar.innerHTML = `<span class="milestones-title">🔸 Карты (≤1945):</span>`;
+            ticksLayer.innerHTML = ``;
+
+            if (currentArchiveScans.length === 0) {
+                const emptySpan = document.createElement('span');
+                emptySpan.style.fontSize = '0.68rem';
+                emptySpan.style.color = '#888';
+                emptySpan.innerText = 'не найдено подлинных датированных сканов';
+                bar.appendChild(emptySpan);
+                return;
+            }
+
+            currentArchiveScans.forEach((scan, idx) => {
+                const chip = document.createElement('button');
+                chip.className = 'gold-chip' + (idx === currentScanIdx ? ' active' : '');
+                const yearLabel = scan.isApproxEpoch ? `~${scan.year} г.` : `${scan.year} г.`;
+                chip.innerText = `🔸 ${yearLabel}`;
+                chip.title = `[${scan.scaleTag}] ${scan.title}`;
+                chip.onclick = () => {
+                    currentScanIdx = idx;
+                    selectedYear = scan.year;
+                    document.getElementById('timeSlider').value = Math.min(Math.max(100, selectedYear), 1950);
+                    document.getElementById('customYearInput').value = selectedYear;
+                    showCurrentGalleryScan(0);
+                    highlightActiveGoldChip();
+                };
+                bar.appendChild(chip);
+
+                const pct = ((Math.min(Math.max(100, scan.year), 1950) - 100) / (1950 - 100)) * 100;
+                const tick = document.createElement('div');
+                tick.className = 'gold-tick';
+                tick.style.left = `${pct}%`;
+                ticksLayer.appendChild(tick);
+            });
+        }
+
+        function highlightActiveGoldChip() {
+            const chips = document.querySelectorAll('.gold-chip');
+            chips.forEach((c, idx) => c.classList.toggle('active', idx === currentScanIdx));
+        }
+
+        function snapToNearestMapByYear(targetYear) {
+            if (currentArchiveScans.length === 0) return;
+            let bestIdx = 0;
+            let minDiff = Math.abs(currentArchiveScans[0].year - targetYear);
+            for (let i = 1; i < currentArchiveScans.length; i++) {
+                const diff = Math.abs(currentArchiveScans[i].year - targetYear);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    bestIdx = i;
+                }
+            }
+            currentScanIdx = bestIdx;
+            const matchedYear = currentArchiveScans[bestIdx].year;
+            const diff = matchedYear - targetYear;
+            showCurrentGalleryScan(diff);
+            highlightActiveGoldChip();
+        }
+
+        function onContinuousSliderInput(val) {
+            selectedYear = parseInt(val, 10);
+            document.getElementById('customYearInput').value = selectedYear;
+            snapToNearestMapByYear(selectedYear);
+        }
+
+        function jumpToCustomYear() {
+            const val = parseInt(document.getElementById('customYearInput').value, 10);
+            if (isNaN(val)) return;
+            selectedYear = val;
+            document.getElementById('timeSlider').value = Math.min(Math.max(100, val), 1950);
+            snapToNearestMapByYear(val);
+        }
+
+        function stepMilestone(dir) {
+            if (currentArchiveScans.length === 0) return;
+            currentScanIdx = (currentScanIdx + dir + currentArchiveScans.length) % currentArchiveScans.length;
+            selectedYear = currentArchiveScans[currentScanIdx].year;
+            document.getElementById('timeSlider').value = Math.min(Math.max(100, selectedYear), 1950);
+            document.getElementById('customYearInput').value = selectedYear;
+            showCurrentGalleryScan(0);
+            highlightActiveGoldChip();
+        }
+
+        function showCurrentGalleryScan(yearDiff = 0) {
+            if (currentArchiveScans.length === 0) return;
+            const item = currentArchiveScans[currentScanIdx];
+            const scanImg = document.getElementById('archiveScanImg');
+            const galInfo = document.getElementById('galInfoText');
+            const loader = document.getElementById('scanLoadingBadge');
+            const t = i18n[currentLang];
+
+            loader.classList.add('visible');
+            scanImg.onload = () => {
+                loader.classList.remove('visible');
+                scanImg.classList.add('loaded');
+            };
+            scanImg.onerror = () => {
+                loader.classList.remove('visible');
+            };
+            scanImg.src = item.url;
+            const scaleBadge = item.scaleTag ? `[${item.scaleTag}] ` : '';
+            const yText = item.isApproxEpoch ? `~${item.year} г.` : `${item.year} г.`;
+            galInfo.innerText = `📜 ${currentScanIdx + 1}/${currentArchiveScans.length} (${yText}) ${scaleBadge}${item.title}`;
+
+            document.getElementById('epochBadge').innerText = `Карта: ${yText}`;
+            const sign = yearDiff > 0 ? `+${yearDiff}` : `${yearDiff}`;
+            document.getElementById('nearestYearHint').innerText = yearDiff === 0 ? `Точно: ${yText}` : `Запрос ${selectedYear} ➔ карта ${yText} (${sign} л.)`;
+
+            const refBox = document.getElementById('activeMapRefBox');
+            if (refBox) {
+                refBox.innerHTML = `📜 <b>${t.mapSourceLabel}</b> ${scaleBadge}${item.title} (<b>${yText}</b>) — <a href="${item.origUrl}" target="_blank" style="color:#ffd700;text-decoration:underline;">Оригинал Wikimedia ↗</a>`;
+            }
+        }
+
+        function openOriginalScan() {
+            if (currentArchiveScans.length === 0 || !currentArchiveScans[currentScanIdx]) return;
+            const item = currentArchiveScans[currentScanIdx];
+            window.open(item.origUrl || item.url, '_blank');
+        }
+
+        function resetScanCalibrationOnly() {
+            scanScale = 1; panX = 0; panY = 0; isRotated = false;
+            applyScanTransform();
+        }
+
+        function stepArchiveScan(dir) {
+            stepMilestone(dir);
+        }
+
+        function renderHistoricalPins() {
+            if (!historicPinsLayer) return;
+            historicPinsLayer.clearLayers();
+            activeMarkersByType = { fact: null, hypo: null, myth: null };
+
+            currentPinsList.forEach(p => {
+                if (pinFilter !== 'all' && p.type !== pinFilter) return;
+                const cssClass = p.type === 'fact' ? 'pin-fact' : (p.type === 'hypo' ? 'pin-hypo' : 'pin-myth');
+                const icon = L.divIcon({
+                    className: '',
+                    html: `<div class="hist-pin-short ${cssClass}" title="${p.fullLabel}">${p.shortLabel}</div>`,
+                    iconSize: [0, 0]
+                });
+                const marker = L.marker(p.coords, { icon: icon }).addTo(historicPinsLayer).bindPopup(`<b>${p.fullLabel}</b>`);
+                if (!activeMarkersByType[p.type]) activeMarkersByType[p.type] = marker;
+            });
+        }
+
+        function setPinFilter(filterType, btnEl) {
+            pinFilter = filterType;
+            document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            renderHistoricalPins();
+        }
+
+        function flyToMarkerType(type) {
+            if (window.innerWidth <= 950) {
+                switchMobilePane('historicPane', document.getElementById('mobBtnHist'));
+            }
+            if (rightMode === 'scan') setRightMode('map');
+            const m = activeMarkersByType[type];
+            if (m && historicMap) {
+                setTimeout(() => {
+                    historicMap.invalidateSize();
+                    historicMap.flyTo(m.getLatLng(), 14, { duration: 0.6 });
+                    setTimeout(() => m.openPopup(), 650);
+                }, 100);
+            }
+        }
+
+        function toggleModernLayer() {
+            if (!modernMap) return;
+            isSatellite = !isSatellite;
+            if (isSatellite) { modernMap.removeLayer(modernStreet); modernSat.addTo(modernMap); }
+            else { modernMap.removeLayer(modernSat); modernStreet.addTo(modernMap); }
+        }
+
+        function setRightMode(mode) {
+            rightMode = mode;
+            const scanLayer = document.getElementById('scanLayer');
+            const galBar = document.getElementById('scanGalleryBar');
+            const subOverlay = document.getElementById('overlaySubControls');
+            const triNote = document.getElementById('triangulationNote');
+            const swipeHandle = document.getElementById('swipeHandle');
+            const zIn = document.getElementById('zoomInScanBtn');
+            const zOut = document.getElementById('zoomOutScanBtn');
+
+            ['Map', 'Scan', 'Overlay', 'Swipe'].forEach(m => {
+                document.getElementById('tab' + m + 'Btn').classList.toggle('active', mode === m.toLowerCase());
+            });
+
+            scanLayer.className = 'scan-layer';
+            scanLayer.style.clipPath = 'none';
+            galBar.classList.remove('visible');
+            subOverlay.classList.remove('visible');
+            triNote.classList.remove('visible');
+            swipeHandle.classList.remove('active');
+            zIn.style.display = 'none';
+            zOut.style.display = 'none';
+
+            if (mode === 'map') {
+                applyScanTransform();
+                if (historicMap) setTimeout(() => historicMap.invalidateSize(), 50);
+            } else if (mode === 'scan') {
+                scanLayer.classList.add('mode-scan');
+                scanLayer.style.opacity = '1';
+                galBar.classList.add('visible');
+                zIn.style.display = 'block';
+                zOut.style.display = 'block';
+                applyScanTransform();
+            } else if (mode === 'overlay') {
+                scanLayer.classList.add('mode-overlay');
+                if (isWarpMode) scanLayer.classList.add('interactive-warp');
+                scanLayer.style.opacity = overlayOpacity;
+                galBar.classList.add('visible');
+                subOverlay.classList.add('visible');
+                triNote.classList.add('visible');
+                zIn.style.display = 'block';
+                zOut.style.display = 'block';
+                applyScanTransform();
+            } else if (mode === 'swipe') {
+                scanLayer.classList.add('mode-swipe');
+                scanLayer.style.opacity = '1';
+                galBar.classList.add('visible');
+                swipeHandle.classList.add('active');
+                zIn.style.display = 'block';
+                zOut.style.display = 'block';
+                updateSwipeClip(swipePercent);
+            }
+        }
+
+        const swipeHandleEl = document.getElementById('swipeHandle');
+        const historicPaneEl = document.getElementById('historicPane');
+
+        function updateSwipeClip(pct) {
+            swipePercent = Math.min(Math.max(5, pct), 95);
+            swipeHandleEl.style.left = swipePercent + '%';
+            const scanLayer = document.getElementById('scanLayer');
+            scanLayer.style.clipPath = `polygon(0 0, ${swipePercent}% 0, ${swipePercent}% 100%, 0 100%)`;
+        }
+
+        swipeHandleEl.addEventListener('mousedown', () => { isDraggingSwipe = true; });
+        swipeHandleEl.addEventListener('touchstart', () => { isDraggingSwipe = true; }, { passive: true });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDraggingSwipe) return;
+            const rect = historicPaneEl.getBoundingClientRect();
+            updateSwipeClip(((e.clientX - rect.left) / rect.width) * 100);
+        });
+        window.addEventListener('touchmove', (e) => {
+            if (!isDraggingSwipe || !e.touches[0]) return;
+            const rect = historicPaneEl.getBoundingClientRect();
+            updateSwipeClip(((e.touches[0].clientX - rect.left) / rect.width) * 100);
+        }, { passive: true });
+        window.addEventListener('mouseup', () => { isDraggingSwipe = false; });
+        window.addEventListener('touchend', () => { isDraggingSwipe = false; });
+
+        function updateOverlayOpacity(val) {
+            overlayOpacity = parseInt(val) / 100;
+            if (rightMode === 'overlay') document.getElementById('scanLayer').style.opacity = overlayOpacity;
+        }
+
+        function toggleWarpMode() {
+            isWarpMode = !isWarpMode;
+            const scanLayer = document.getElementById('scanLayer');
+            const btn = document.getElementById('warpToggleBtn');
+            const t = i18n[currentLang];
+            scanLayer.classList.toggle('interactive-warp', isWarpMode);
+            btn.classList.toggle('active', isWarpMode);
+            btn.innerText = isWarpMode ? t.modeWarpScan : t.modeMoveMap;
+        }
+
+        function resetCenter() {
+            scanScale = 1; panX = 0; panY = 0; isRotated = false;
+            applyScanTransform();
+            if (modernMap) modernMap.setView(currentCoords, 12);
+        }
+
+        function applyScanTransform() {
+            const deg = isRotated ? 180 : 0;
+            document.getElementById('scanWrapper').style.transform = `translate(${panX}px, ${panY}px) scale(${scanScale}) rotate(${deg}deg)`;
+            document.getElementById('historicMap').style.transform = (rightMode === 'map') ? `rotate(${deg}deg)` : 'rotate(0deg)';
+            document.getElementById('compassArrow').innerText = isRotated ? `⬇️` : `⬆️`;
+            document.getElementById('compassText').innerText = isRotated ? `ЮГ` : `N`;
+        }
+
+        function zoomScan(delta) {
+            scanScale = Math.min(Math.max(0.4, scanScale + delta), 5);
+            applyScanTransform();
+        }
+
+        function toggleRotation() {
+            isRotated = !isRotated;
+            applyScanTransform();
+        }
+
+        const scanLayerEl = document.getElementById('scanLayer');
+        scanLayerEl.addEventListener('wheel', function(e) {
+            if (rightMode === 'scan' || (rightMode === 'overlay' && isWarpMode)) {
+                e.preventDefault();
+                zoomScan(e.deltaY < 0 ? 0.2 : -0.2);
+            }
+        });
+        scanLayerEl.addEventListener('mousedown', function(e) {
+            if (rightMode === 'scan' || (rightMode === 'overlay' && isWarpMode)) {
+                isDraggingScan = true; startX = e.clientX - panX; startY = e.clientY - panY;
+            }
+        });
+        scanLayerEl.addEventListener('touchstart', function(e) {
+            if ((rightMode === 'scan' || (rightMode === 'overlay' && isWarpMode)) && e.touches[0]) {
+                isDraggingScan = true; startX = e.touches[0].clientX - panX; startY = e.touches[0].clientY - panY;
+            }
+        }, { passive: true });
+        window.addEventListener('mousemove', function(e) {
+            if (!isDraggingScan) return;
+            panX = e.clientX - startX; panY = e.clientY - startY; applyScanTransform();
+        });
+        window.addEventListener('touchmove', function(e) {
+            if (!isDraggingScan || !e.touches[0]) return;
+            panX = e.touches[0].clientX - startX; panY = e.touches[0].clientY - startY; applyScanTransform();
+        }, { passive: true });
+        window.addEventListener('mouseup', () => { isDraggingScan = false; });
+        window.addEventListener('touchend', () => { isDraggingScan = false; });
+
+        function setLang(lang, btnEl) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            document.getElementById('mobDrawerBtn').innerText = `🔍 Поиск / ${lang.toUpperCase()} ▾`;
+            closeMobileDrawer();
+            exploreWorldPoint(currentCoords[0], currentCoords[1], null);
+        }
+
+        exploreWorldPoint(54.2611, 18.6361, null);
+    </script>
+</body>
+</html>
