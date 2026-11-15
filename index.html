@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Исторический Атлас Мира (v2.1 — 360° Калибровка, Гид & Авторская Защита)</title>
+    <title>Исторический Атлас Мира (v2.5 — Глобальный Wikidata/Wiki-парсер старых имён, 2.5K/HD Сканы & Анти-мусор)</title>
     <meta name="author" content="Сергій Пересунько (Daarez)">
     <meta name="copyright" content="Copyright (c) 2026 Сергій Пересунько (Daarez). All rights reserved.">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
@@ -136,8 +136,13 @@
         /* ВАРИАНТ В: ДВУХУРОВНЕВАЯ ГИБРИДНАЯ ШКАЛА ВРЕМЕНИ С ЗОЛОТЫМИ ЗАСЕЧКАМИ РЕАЛЬНЫХ КАРТ */
         .timeline-wrapper { background: #202020; border-top: 1px solid #3a3a3a; display: flex; flex-direction: column; padding: 4px 10px 6px; gap: 4px; z-index: 2000; flex-shrink: 0; }
         
-        .gold-milestones-bar { display: flex; align-items: center; gap: 5px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; min-height: 24px; }
-        .gold-milestones-bar::-webkit-scrollbar { display: none; }
+        .milestones-row-wrap { display: flex; align-items: center; gap: 4px; width: 100%; }
+        .milestones-scroll-btn { background: #2c2517; color: #ffd700; border: 1px solid #8c6d46; border-radius: 4px; width: 22px; height: 22px; font-size: 0.72rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .milestones-scroll-btn:hover { background: #d4af37; color: #111; }
+        .gold-milestones-bar { display: flex; align-items: center; gap: 5px; overflow-x: auto; scrollbar-width: thin; scrollbar-color: #d4af37 #1a1a1a; padding-bottom: 3px; min-height: 26px; flex: 1; scroll-behavior: smooth; }
+        .gold-milestones-bar::-webkit-scrollbar { height: 4px; }
+        .gold-milestones-bar::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 2px; }
+        .gold-milestones-bar::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 2px; }
         .milestones-title { font-size: 0.68rem; color: #aaa; white-space: nowrap; font-weight: bold; }
         .gold-chip { background: rgba(55, 43, 15, 0.9); color: #ffd700; border: 1px solid #d4af37; padding: 2px 8px; border-radius: 10px; font-size: 0.69rem; font-weight: bold; cursor: pointer; white-space: nowrap; transition: 0.15s; }
         .gold-chip:hover, .gold-chip.active { background: #d4af37; color: #111; box-shadow: 0 0 8px rgba(212,175,55,0.6); }
@@ -160,6 +165,72 @@
         .mob-nav-btn:last-child { border-right: none; }
         .mob-nav-btn.active { background: #262626; color: #ffd700; border-top: 2.5px solid #d4af37; }
 
+
+
+        /* v2.2: Геймификация, Дневник Исследователя, Лавка Артефактов, Лупа и Контекстные шпаргалки */
+        .explorer-hud-pill { background: linear-gradient(135deg, #2d2414, #1c170d); color: #ffd700; border: 1px solid #d4af37; padding: 0 9px; height: 32px; border-radius: 16px; font-size: 0.74rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.6); transition: transform 0.15s, box-shadow 0.15s; }
+        .explorer-hud-pill:hover { transform: scale(1.03); box-shadow: 0 0 10px rgba(212,175,55,0.5); }
+        .explorer-hud-pill.strict-hidden { display: none !important; }
+        .top-help-btn { background: #332a18; color: #ffd700; border: 1.5px solid #d4af37; width: 32px; height: 32px; border-radius: 50%; font-size: 0.82rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+        .top-help-btn:hover { background: #d4af37; color: #111; }
+
+        /* Вкладки Дневника Исследователя */
+        .diary-tabs { display: flex; gap: 5px; margin-bottom: 12px; border-bottom: 1px solid #4a3e2a; padding-bottom: 8px; flex-wrap: wrap; }
+        .diary-tab-btn { background: #2a241b; color: #cbbba0; border: 1px solid #554833; padding: 6px 11px; border-radius: 6px; font-size: 0.76rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+        .diary-tab-btn.active { background: #d4af37; color: #111; border-color: #ffe066; }
+        .diary-tab-pane { display: none; }
+        .diary-tab-pane.active { display: block; }
+
+        /* Профиль и выбор аватара Хранителя */
+        .profile-bar { background: rgba(255,255,255,0.04); border: 1px solid #4a3e2a; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .avatar-selector { display: flex; gap: 5px; align-items: center; }
+        .avatar-Option { width: 34px; height: 34px; border-radius: 50%; background: #1c1813; border: 1.5px solid #554833; font-size: 1.1rem; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.15s; }
+        .avatar-Option.active { border-color: #ffd700; background: #3d3118; transform: scale(1.1); box-shadow: 0 0 8px rgba(255,215,0,0.5); }
+
+        /* Квесты и Лавка */
+        .quest-list, .shop-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; max-height: 46vh; overflow-y: auto; padding-right: 3px; }
+        .quest-card, .shop-card { background: rgba(255,255,255,0.035); border: 1px solid #4a3e2a; border-radius: 7px; padding: 8px 11px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .quest-card.done { border-color: #2e7d32; background: rgba(46, 125, 50, 0.12); }
+        .quest-info b, .shop-info b { font-size: 0.8rem; color: #ffd700; display: block; margin-bottom: 2px; }
+        .quest-info span, .shop-info span { font-size: 0.73rem; color: #ccc; line-height: 1.3; display: block; }
+        .quest-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .reward-badge { background: rgba(212,175,55,0.18); color: #ffd700; border: 1px solid #d4af37; padding: 3px 7px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; white-space: nowrap; }
+        .btn-show-where { background: #333; color: #eee; border: 1px solid #666; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; white-space: nowrap; }
+        .btn-show-where:hover { border-color: #ffd700; color: #ffd700; }
+        .btn-buy-item { background: #d4af37; color: #111; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.72rem; font-weight: bold; cursor: pointer; white-space: nowrap; }
+        .btn-buy-item.equipped { background: #2e7d32; color: #fff; }
+        .btn-buy-item:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        /* Пульсирующая золотая подсветка кнопок ("Показать где") */
+        @keyframes pulseGoldTarget {
+            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.95), 0 0 14px 4px #ffd700; transform: scale(1); }
+            50% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0), 0 0 22px 8px #ffd700; transform: scale(1.08); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), 0 0 14px 4px #ffd700; transform: scale(1); }
+        }
+        .quest-target-highlight { animation: pulseGoldTarget 1.2s infinite !important; border: 2px solid #ffd700 !important; z-index: 4500 !important; position: relative; }
+
+        /* Уведомление (Тост) о выполнении квеста */
+        .quest-toast { position: fixed; bottom: 58px; right: 16px; z-index: 6000; background: linear-gradient(135deg, #2b2212, #18140b); border: 1.5px solid #ffd700; color: #fff; padding: 10px 14px; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.9); display: none; align-items: center; gap: 10px; font-size: 0.78rem; max-width: 340px; }
+        .quest-toast.show { display: flex; animation: fadeInUp 0.25s ease-out; }
+
+        /* Контекстная однострочная плашка-шпаргалка на карте */
+        .context-tip-bar { background: rgba(24, 20, 14, 0.94); border: 1px solid #d4af37; color: #f7e2a8; padding: 4px 9px; border-radius: 5px; font-size: 0.7rem; pointer-events: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.65); }
+        .context-tip-bar.hidden { display: none !important; }
+        .tip-close-x { background: transparent; border: none; color: #aaa; font-size: 0.75rem; cursor: pointer; padding: 0 3px; }
+        .tip-close-x:hover { color: #fff; }
+
+        /* Скины исторической карты и скана из Лавки Артефактов */
+        .skin-blueprint .leaflet-tile-pane { filter: invert(92%) sepia(35%) hue-rotate(175deg) saturate(190%) contrast(108%) !important; }
+        .skin-blueprint .scan-wrapper img { border-color: #00a8ff !important; filter: contrast(112%) brightness(96%); }
+        .skin-mercator .leaflet-tile-pane { filter: sepia(45%) hue-rotate(85deg) saturate(135%) brightness(92%) contrast(108%) !important; }
+        .skin-mercator .scan-wrapper img { border-color: #2ecc71 !important; }
+        .skin-genshtab .leaflet-tile-pane { filter: grayscale(20%) contrast(135%) saturate(125%) brightness(95%) !important; }
+        .skin-genshtab .scan-wrapper img { border-color: #e84118 !important; filter: contrast(122%); }
+
+        /* Спец-инструмент "Лупа Архивариуса" (2.5x) */
+        .archivist-loupe { position: absolute; width: 145px; height: 145px; border: 3px solid #ffd700; border-radius: 50%; box-shadow: 0 6px 24px rgba(0,0,0,0.9), inset 0 0 12px rgba(0,0,0,0.6); pointer-events: none; z-index: 1200; display: none; background-repeat: no-repeat; background-color: #181512; }
+        .archivist-loupe.active { display: block; }
+        .tool-btn.active-tool { background: #d4af37 !important; color: #111 !important; border-color: #fff !important; }
 
         /* v2.1: Модальное окно-приветствие (Онбординг от сестры) и Авторская защита */
         .welcome-modal-backdrop { position: fixed; inset: 0; background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(5px); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 14px; }
@@ -190,11 +261,14 @@
         }
 
         @media (max-width: 950px) {
-            header { height: 42px; padding: 0 8px; }
-            .brand { font-size: 0.84rem; }
+            header { height: 44px; padding: 0 6px; gap: 4px; }
+            .brand { font-size: 0.78rem; }
             .ver-pill { display: none; }
-            .current-loc-badge { max-width: 130px; font-size: 0.72rem; padding: 4px 7px; }
-            .mob-Menu-toggle { display: inline-flex; align-items: center; }
+            .current-loc-badge { max-width: 92px; font-size: 0.68rem; padding: 3px 5px; }
+            .explorer-hud-pill { padding: 0 6px; height: 28px; font-size: 0.68rem; }
+            .hud-rank-text { display: none; }
+            .top-help-btn { width: 28px; height: 28px; font-size: 0.74rem; }
+            .mob-Menu-toggle { display: inline-flex; align-items: center; height: 28px; padding: 0 6px; font-size: 0.7rem; }
             
             .header-drawer { display: none; position: absolute; top: 42px; left: 0; right: 0; background: rgba(24, 24, 24, 0.98); border-bottom: 2px solid #d4af37; padding: 10px; flex-direction: column; align-items: stretch; gap: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.85); z-index: 3000; }
             .header-drawer.open { display: flex; }
@@ -223,11 +297,18 @@
 <body>
 
     <header>
-        <div class="brand">🗺️ Атлас Мира <span class="ver-pill">v2.1</span></div>
+        <div class="brand">🗺️ Атлас Мира <span class="ver-pill">v2.5</span></div>
         
-        <div style="display:flex; align-items:center; gap:6px;">
+        <div style="display:flex; align-items:center; gap:5px;">
             <div class="current-loc-badge" id="currentLocBadge" title="Текущая исследуемая точка мира">📍 Загрузка...</div>
-            <button class="mob-Menu-toggle" onclick="toggleMobileDrawer()" id="mobDrawerBtn">🔍 Поиск / RU ▾</button>
+            <button class="explorer-hud-pill" id="explorerHudBtn" onclick="openWelcomeModal('quests')" title="Дневник Исследователя: Квесты, Ранг и Лавка Артефактов">
+                <span id="hudAvatarIcon">🧭</span>
+                <span class="hud-rank-text" id="hudRankName">Путник</span>
+                <span style="color:#fff;">|</span>
+                <span>🪙 <b id="hudCoinsCount">0</b></span>
+            </button>
+            <button class="top-help-btn" id="alwaysVisibleHelpBtn" onclick="openWelcomeModal('guide')" title="Справка, обучение и подсказки по функциям">❓</button>
+            <button class="mob-Menu-toggle" onclick="toggleMobileDrawer()" id="mobDrawerBtn">🔍 Поиск ▾</button>
         </div>
 
         <div class="header-drawer" id="headerDrawer">
@@ -276,6 +357,10 @@
                         <button class="filter-chip" onclick="setPinFilter('myth', this)">🔴<span class="filter-text-lbl"> Окрестности</span></button>
                     </div>
                 </div>
+                <div class="context-tip-bar" id="contextTipBar">
+                    <span id="contextTipText">💡 <b>Скан:</b> Листай карты кнопками ◀ ▶ внизу или крути ползунок 🔄 Угол справа.</span>
+                    <button class="tip-close-x" onclick="toggleContextTips(false)" title="Скрыть подсказку">✕</button>
+                </div>
                 <div class="triangulation-note" id="triangulationNote"></div>
             </div>
 
@@ -292,6 +377,7 @@
                 </div>
                 <button class="tool-btn" id="zoomInScanBtn" style="display:block;" onclick="zoomScan(0.35)">➕</button>
                 <button class="tool-btn" id="zoomOutScanBtn" style="display:block;" onclick="zoomScan(-0.35)">➖</button>
+                <button class="tool-btn" id="loupeToolBtn" onclick="toggleArchivistLoupe()" title="Лупа Архивариуса 2.5x (открывается в Лавке Артефактов)">🔍</button>
                 <button class="tool-btn" onclick="resetScanCalibrationOnly()" title="Сбросить масштаб, сдвиг и угол скана (1:1)">1:1</button>
                 <button class="tool-btn" onclick="resetCenter()" title="Сбросить вид в центр">🎯</button>
             </div>
@@ -301,6 +387,7 @@
 
             <!-- Слой подлинного архивного скана -->
             <div class="scan-layer mode-scan" id="scanLayer" style="opacity:1;">
+                <div class="archivist-loupe" id="archivistLoupe"></div>
                 <div class="scan-wrapper" id="scanWrapper">
                     <img id="archiveScanImg" src="" alt="" />
                 </div>
@@ -315,7 +402,8 @@
                 <button class="gal-btn" onclick="stepArchiveScan(-1)" title="Предыдущая карта из архива">◀</button>
                 <span class="gal-info" id="galInfoText">📜 Загрузка...</span>
                 <button class="gal-btn" onclick="stepArchiveScan(1)" title="Следующая карта из архива">▶</button>
-                <button class="gal-btn" onclick="openOriginalScan()" title="Открыть оригинал карты в полном разрешении">🔍 Ориг.</button>
+                <button class="gal-btn" id="hdToggleBtn" onclick="toggleUltraHdScan()" title="Переключить в сверхчёткий оригинал (Ultra HD) для чтения мелких подписей">✨ HD</button>
+                <button class="gal-btn" onclick="openOriginalScan()" title="Открыть оригинал карты в новой вкладке">🔍 Ориг.</button>
 
                 <div class="overlay-controls-sub" id="overlaySubControls">
                     <label>
@@ -333,8 +421,12 @@
 
     <!-- ВАРИАНТ В: Гибридная шкала времени (произвольный год + золотые засечки реальных карт города) -->
     <div class="timeline-wrapper">
-        <div class="gold-milestones-bar" id="goldMilestonesBar">
-            <span class="milestones-title">🔸 Карты в архиве:</span>
+        <div class="milestones-row-wrap">
+            <button class="milestones-scroll-btn" onclick="scrollMilestonesBar(-240)" title="Прокрутить список годов влево">‹</button>
+            <div class="gold-milestones-bar" id="goldMilestonesBar">
+                <span class="milestones-title">🔸 Карты в архиве:</span>
+            </div>
+            <button class="milestones-scroll-btn" onclick="scrollMilestonesBar(240)" title="Прокрутить список годов вправо">›</button>
         </div>
         <div class="timeline-row">
             <div class="year-input-group">
@@ -361,34 +453,72 @@
     </nav>
 
 
-    <!-- v2.1: МОДАЛЬНОЕ ОКНО-ПРИВЕТСТВИЕ И ИНТЕРАКТИВНЫЙ ГИД -->
+    <!-- v2.2: ДНЕВНИК ИССЛЕДОВАТЕЛЯ, ЖИВЫЕ КВЕСТЫ, ЛАВКА АРТЕФАКТОВ И СПРАВКА (НА 4 ЯЗЫКАХ) -->
     <div class="welcome-modal-backdrop" id="welcomeModalBackdrop" onclick="if(event.target===this) closeWelcomeModal()">
         <div class="welcome-card">
             <h2>
-                <span>🧭 Добро пожаловать в Исторический Атлас Мира!</span>
+                <span id="modalMainTitle">🧭 Дневник Исследователя и Справка</span>
                 <button class="btn-ui" onclick="closeWelcomeModal()" style="height:26px;padding:2px 8px;">✕</button>
             </h2>
-            <p class="welcome-sub">
-                Это интерактивная машина времени: здесь можно кликнуть в <b>любую точку Земли</b> (или ввести название города/села в поиск) и мгновенно поднять подлинные архивные карты до 1945 года, старые топонимы и летопись места.
-            </p>
-            <div class="guide-grid">
-                <div class="guide-item">
-                    <b>📜 1. Режим «Скан» и «Карта»</b>
-                    <span>По умолчанию в правом окне открывается подлинный старинный скан из архива Wikimedia. Листай карты кнопками <b>◀ ▶</b> внизу или открывай <b>🔍 Ориг.</b> в полном разрешении.</span>
+
+            <!-- Панель профиля, ранга и выбора аватара Хранителя -->
+            <div class="profile-bar" id="explorerProfileBar">
+                <div>
+                    <div style="font-size:0.82rem;color:#ffd700;font-weight:bold;">
+                        <span id="profileRankLabel">Ранг:</span> <span id="profileRankValue">I. Путник</span> • 🪙 <span id="profileCoinsValue">0</span> <span id="profileCoinsWord">дукатов</span>
+                    </div>
+                    <div style="font-size:0.7rem;color:#bbb;margin-top:2px;" id="keeperQuoteText">«Выполняй миссии экспедиции, чтобы освоить все инструменты атласа!»</div>
                 </div>
-                <div class="guide-item">
-                    <b>🌓 2. Режим «Наложение» + Поворот 360°</b>
-                    <span>Накладывает старую карту полупрозрачным слоем поверх современной! Нажми кнопку <b>📌 Карта ➔ ✋ Скан</b>, чтобы двигать, масштабировать и <b>крутить скан двумя пальцами</b> (или ползунком <b>🔄 Угол</b> справа), совмещая старые дороги с современными.</span>
-                </div>
-                <div class="guide-item">
-                    <b>🌗 3. Режим «Шторка»</b>
-                    <span>Тяни золотой разделитель <b>◀|▶</b> влево-вправо, чтобы вживую сравнивать старинную гравюру и современную карту на одном экране.</span>
-                </div>
-                <div class="guide-item">
-                    <b>🔸 4. Золотая шкала времени и Паспорт</b>
-                    <span>Над ползунком времени загораются <b>золотые кнопки реальных лет</b> найденных карт. А справа в «Паспорте» собраны старые названия села/города и кликабельные памятники в радиусе 10 км.</span>
+                <div class="avatar-selector" title="Выбери аватар своего Хранителя Архивов">
+                    <button class="avatar-Option active" onclick="selectExplorerAvatar('🧭', this)">🧭</button>
+                    <button class="avatar-Option" onclick="selectExplorerAvatar('📜', this)">📜</button>
+                    <button class="avatar-Option" onclick="selectExplorerAvatar('⚓', this)">⚓</button>
+                    <button class="avatar-Option" onclick="selectExplorerAvatar('🏰', this)">🏰</button>
+                    <button class="avatar-Option" onclick="selectExplorerAvatar('🕵️', this)" title="Детектив архивов">🕵️</button>
                 </div>
             </div>
+
+            <!-- Вкладки: Справка / Задания / Лавка Артефактов -->
+            <div class="diary-tabs">
+                <button class="diary-tab-btn active" id="dTabGuideBtn" onclick="switchDiaryTab('guide')">📖 <span id="dTabGuideLbl">Справка и Гид</span></button>
+                <button class="diary-tab-btn" id="dTabQuestsBtn" onclick="switchDiaryTab('quests')">🎯 <span id="dTabQuestsLbl">Задания (Туториал)</span></button>
+                <button class="diary-tab-btn" id="dTabShopBtn" onclick="switchDiaryTab('shop')">🏛️ <span id="dTabShopLbl">Лавка Артефактов</span></button>
+            </div>
+
+            <!-- ВКЛАДКА 1: СПРАВКА ПО ФУНКЦИЯМ -->
+            <div class="diary-tab-pane active" id="diaryPaneGuide">
+                <p class="welcome-sub" id="guideIntroText">
+                    Кликни в <b>любую точку Земли</b> на современной карте (или введи город/село в поиск), чтобы поднять подлинные архивные карты до 1945 года, исторические названия и летопись места.
+                </p>
+                <div class="guide-grid" id="guideGridCards"></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:6px;border:1px solid #3c3222;margin-bottom:10px;">
+                    <label style="font-size:0.74rem;color:#e8c682;cursor:pointer;display:flex;align-items:center;gap:6px;">
+                        <input type="checkbox" id="showContextTipsChk" checked onchange="toggleContextTips(this.checked)" style="accent-color:#d4af37;">
+                        <span id="lblShowContextTips">💡 Показывать подсказки-шпаргалки над картой</span>
+                    </label>
+                    <label style="font-size:0.74rem;color:#aaa;cursor:pointer;display:flex;align-items:center;gap:6px;">
+                        <input type="checkbox" id="strictAcademicModeChk" onchange="toggleStrictAcademicMode(this.checked)" style="accent-color:#d4af37;">
+                        <span id="lblStrictMode">🎓 Строгий научный режим (скрыть квесты и монеты)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ВКЛАДКА 2: КВЕСТЫ-ЭКСПЕДИЦИИ (ИНТЕРАКТИВНОЕ ОБУЧЕНИЕ С ПОДСВЕТКОЙ КНОПОК) -->
+            <div class="diary-tab-pane" id="diaryPaneQuests">
+                <p class="welcome-sub" id="questsIntroText">
+                    Нажми <b>«👁️ Показать где»</b> на любом задании — окно закроется, а нужная кнопка на экране подсветится золотым свечением! Все базовые функции открыты сразу, а за миссии начисляются <b>Архивные дукаты (🪙)</b>.
+                </p>
+                <div class="quest-list" id="questListContainer"></div>
+            </div>
+
+            <!-- ВКЛАДКА 3: ЛАВКА АРТЕФАКТОВ (СКИНЫ, ПИНЫ, ЛУПА) -->
+            <div class="diary-tab-pane" id="diaryPaneShop">
+                <p class="welcome-sub" id="shopIntroText">
+                    Обменивай заработанные в экспедициях дукаты (🪙) на картографические темы оформления, средневековые значки пинов и архивную лупу 2.5x:
+                </p>
+                <div class="shop-list" id="shopListContainer"></div>
+            </div>
+
             <div class="welcome-footer">
                 <div class="author-stamp">
                     Автор проекта и архитектуры: <b>© 2026 Сергій Пересунько (<a href="https://github.com/Daarez/atlas" target="_blank">Daarez</a>)</b>.<br>
@@ -396,11 +526,20 @@
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <label style="font-size:0.73rem;color:#ccc;cursor:pointer;display:flex;align-items:center;gap:4px;">
-                        <input type="checkbox" id="dontShowWelcomeChk" style="accent-color:#d4af37;"> Не показывать при входе
+                        <input type="checkbox" id="dontShowWelcomeChk" style="accent-color:#d4af37;"> <span id="lblDontShowAgain">Не показывать при входе</span>
                     </label>
-                    <button class="btn-start-atlas" onclick="closeWelcomeModal()">🚀 Начать исследование</button>
+                    <button class="btn-start-atlas" onclick="closeWelcomeModal()" id="btnStartAtlasText">🚀 К карте</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Всплывающее уведомление о выполненном квесте -->
+    <div class="quest-toast" id="questToast">
+        <span style="font-size:1.4rem;">🏆</span>
+        <div>
+            <b style="color:#ffd700;display:block;" id="questToastTitle">Миссия выполнена!</b>
+            <span id="questToastDesc" style="color:#eee;font-size:0.73rem;"></span>
         </div>
     </div>
 
@@ -524,6 +663,492 @@
             }
         };
 
+
+        // ================= v2.2: ДВИЖОК ГЕЙМИФИКАЦИИ, КВЕСТОВ, ЛАВКИ И СПРАВКИ НА 4 ЯЗЫКАХ =================
+        const guideI18n = {
+            ru: {
+                modalTitle: '🧭 Дневник Исследователя и Справка',
+                rankLabel: 'Ранг:',
+                coinsWord: 'дукатов',
+                ranks: ['I. Путник', 'II. Топограф', 'III. Королевский Картограф', 'IV. Хранитель Архивов'],
+                tabGuide: 'Справка и Гид',
+                tabQuests: 'Задания (Туториал)',
+                tabShop: 'Лавка Артефактов',
+                guideIntro: 'Кликни в <b>любую точку Земли</b> на современной карте (или введи город/село в поиск), чтобы поднять подлинные архивные карты до 1945 года, старые топонимы и летопись места.',
+                questsIntro: 'Нажми <b>«👁️ Где это?»</b> — окно свернётся, а нужная кнопка на экране подсветится золотым пульсирующим свечением! За выполнение начисляются <b>Архивные дукаты (🪙)</b>.',
+                shopIntro: 'Обменивай заработанные дукаты (🪙) на исторические темы оформления, средневековые иконки пинов и Лупу Архивариуса 2.5x:',
+                showTipsLbl: '💡 Показывать подсказки-шпаргалки над картой',
+                strictModeLbl: '🎓 Строгий научный режим (скрыть квесты и монеты)',
+                dontShowLbl: 'Не показывать при старте',
+                btnStart: '🚀 К карте',
+                showWhereBtn: '👁️ Где это?',
+                doneBadge: '✅ Выполнено',
+                buyBtn: 'Открыть за',
+                equipBtn: 'Выбрать',
+                equippedBtn: '✓ Активно',
+                cards: [
+                    { t: '📜 1. Режим «Скан» и «Карта»', d: 'По умолчанию открывается подлинный старинный скан из архива Wikimedia. Листай карты кнопками <b>◀ ▶</b> внизу или открывай <b>🔍 Ориг.</b> в полном разрешении.' },
+                    { t: '🌓 2. Режим «Наложение» + Поворот 360°', d: 'Накладывает старую карту полупрозрачным слоем поверх современной! Нажми <b>📌 Карта ➔ ✋ Скан</b> внизу, чтобы двигать и <b>крутить скан двумя пальцами</b> (или ползунком <b>🔄 Угол</b>).' },
+                    { t: '🌗 3. Режим «Шторка»', d: 'Тяни золотой разделитель <b>◀|▶</b> влево-вправо, чтобы вживую сравнивать старинную гравюру и современную карту.' },
+                    { t: '🔸 4. Золотая шкала и Паспорт', d: 'Над ползунком времени загораются <b>золотые кнопки реальных лет</b> найденных карт. А в «Паспорте» собраны старые названия и памятники рядом.' }
+                ],
+                modeTips: {
+                    scan: '💡 <b>Режим «Скан»:</b> Листай старинные карты кнопками <b>◀ ▶</b> внизу, приближай щипком/кнопками ➕➖ или крути на 360° ползунком <b>🔄 Угол</b>.',
+                    map: '💡 <b>Режим «Карта»:</b> Кликни на любой цветной пин на карте или на карточку в «Паспорте», чтобы прочитать историю объекта.',
+                    overlay: '💡 <b>Режим «Наложение»:</b> Меняй прозрачность ползунком <b>Слой</b> внизу. Нажми <b>📌 Карта ➔ ✋ Скан</b>, чтобы двигать и крутить скан двумя пальцами!',
+                    swipe: '💡 <b>Режим «Шторка»:</b> Потяни золотой бегунок <b>◀|▶</b> посередине экрана влево или вправо для сравнения эпох.'
+                },
+                quests: [
+                    { id: 'q_search', title: '1. Первая разведка', desc: 'Найди любой город/село через поиск или кликни в новую точку на современной карте.', reward: 15, target: 'modernPane' },
+                    { id: 'q_ancient', title: '2. Сквозь века', desc: 'Выбери на золотой шкале внизу любую архивную карту старше 1800 года.', reward: 20, target: 'goldMilestonesBar' },
+                    { id: 'q_overlay_rot', title: '3. Мастер триангуляции', desc: 'Включи режим «🌓 Налож.» и поверни карту ползунком «🔄 Угол» (или двумя пальцами).', reward: 30, target: 'tabOverlayBtn' },
+                    { id: 'q_swipe', title: '4. Глаз времени', desc: 'Включи режим «🌗 Шторка» и потяни золотой разделитель ◀|▶.', reward: 20, target: 'tabSwipeBtn' },
+                    { id: 'q_passport', title: '5. Краевед-архивариус', desc: 'Кликни на любую карточку памятника в «Паспорте» справа (или во вкладке Паспорт на телефоне).', reward: 15, target: 'passportPanel' }
+                ]
+            },
+            ua: {
+                modalTitle: '🧭 Щоденник Дослідника та Довідка',
+                rankLabel: 'Ранг:',
+                coinsWord: 'дукатів',
+                ranks: ['I. Мандрівник', 'II. Топограф', 'III. Королівський Картограф', 'IV. Хранитель Архівів'],
+                tabGuide: 'Довідка та Гід',
+                tabQuests: 'Завдання (Туторіал)',
+                tabShop: 'Крамниця Артефактів',
+                guideIntro: 'Клікни в <b>будь-яку точку Землі</b> на сучасній карті (або введи місто/село в пошук), щоб підняти справжні архівні карти до 1945 року, старі топоніми та літопис місця.',
+                questsIntro: 'Натисни <b>«👁️ Де це?»</b> — вікно згорнеться, а потрібна кнопка підсвітиться золотим сяйвом! За виконання нараховуються <b>Архівні дукати (🪙)</b>.',
+                shopIntro: 'Обмінюй зароблені дукати (🪙) на історичні теми оформлення, середньовічні іконки пінів та Лупу Архіваріуса 2.5x:',
+                showTipsLbl: '💡 Показувати підказки-шпаргалки над картою',
+                strictModeLbl: '🎓 Суворий науковий режим (приховати квести та монети)',
+                dontShowLbl: 'Не показувати при вході',
+                btnStart: '🚀 До карти',
+                showWhereBtn: '👁️ Де це?',
+                doneBadge: '✅ Виконано',
+                buyBtn: 'Відкрити за',
+                equipBtn: 'Обрати',
+                equippedBtn: '✓ Активно',
+                cards: [
+                    { t: '📜 1. Режим «Скан» і «Карта»', d: 'За замовчуванням відкривається старовинний скан з архіву Wikimedia. Гортай карти кнопками <b>◀ ▶</b> внизу або відкривай <b>🔍 Ориг.</b> у повній якості.' },
+                    { t: '🌓 2. Режим «Накладання» + Поворот 360°', d: 'Накладає стару карту напівпрозорим шаром поверх сучасної! Натисни <b>📌 Карта ➔ ✋ Скан</b> внизу, щоб рухати і <b>крутити скан двома пальцями</b> (або повзунком <b>🔄 Кут</b>).' },
+                    { t: '🌗 3. Режим «Шторка»', d: 'Тягни золотий роздільник <b>◀|▶</b> вліво-вправо, щоб наживо порівнювати старовинну гравюру та сучасну карту.' },
+                    { t: '🔸 4. Золота шкала та Паспорт', d: 'Над повзунком часу загоряються <b>золоті кнопки реальних років</b> знайдених карт. А в «Паспорті» зібрані старі назви та пам’ятки поруч.' }
+                ],
+                modeTips: {
+                    scan: '💡 <b>Режим «Скан»:</b> Гортай старовинні карти кнопками <b>◀ ▶</b> внизу, наближай щипком/кнопками ➕➖ або крути на 360° повзунком <b>🔄 Кут</b>.',
+                    map: '💡 <b>Режим «Карта»:</b> Клікни на будь-який кольоровий пін на карті або на картку в «Паспорті», щоб прочитати історію об’єкта.',
+                    overlay: '💡 <b>Режим «Накладання»:</b> Змінюй прозорість повзунком <b>Шар</b> внизу. Натисни <b>📌 Карта ➔ ✋ Скан</b>, щоб рухати і крутити скан двома пальцями!',
+                    swipe: '💡 <b>Режим «Шторка»:</b> Потягни золотий бігунок <b>◀|▶</b> посередині екрана вліво або вправо для порівняння епох.'
+                },
+                quests: [
+                    { id: 'q_search', title: '1. Перша розвідка', desc: 'Знайди будь-яке місто/село через пошук або клікни в нову точку на сучасній карті.', reward: 15, target: 'modernPane' },
+                    { id: 'q_ancient', title: '2. Крізь століття', desc: 'Обери на золотій шкалі внизу будь-яку архівну карту старішу за 1800 рік.', reward: 20, target: 'goldMilestonesBar' },
+                    { id: 'q_overlay_rot', title: '3. Майстер тріангуляції', desc: 'Увімкни режим «🌓 Наклад.» і поверни карту повзунком «🔄 Кут» (або двома пальцями).', reward: 30, target: 'tabOverlayBtn' },
+                    { id: 'q_swipe', title: '4. Око часу', desc: 'Увімкни режим «🌗 Шторка» і потягни золотий роздільник ◀|▶.', reward: 20, target: 'tabSwipeBtn' },
+                    { id: 'q_passport', title: '5. Краєзнавець-архіваріус', desc: 'Клікни на будь-яку картку пам’ятки в «Паспорті» праворуч (або у вкладці Паспорт на телефоні).', reward: 15, target: 'passportPanel' }
+                ]
+            },
+            pl: {
+                modalTitle: '🧭 Dziennik Odkrywcy i Pomoc',
+                rankLabel: 'Ranga:',
+                coinsWord: 'dukatów',
+                ranks: ['I. Wędrowiec', 'II. Topograf', 'III. Królewski Kartograf', 'IV. Strażnik Archiwów'],
+                tabGuide: 'Pomoc i Przewodnik',
+                tabQuests: 'Misje (Samouczek)',
+                tabShop: 'Sklep Artefaktów',
+                guideIntro: 'Kliknij <b>dowolny punkt na Ziemi</b> na mapie współczesnej (lub wpisz miasto/wieś w wyszukiwarkę), aby odkryć archiwalne mapy sprzed 1945 roku, dawne nazwy i historię miejsca.',
+                questsIntro: 'Kliknij <b>„👁️ Gdzie to?”</b> — okno się zamknie, a odpowiedni przycisk zaświeci się na złoto! Za wykonanie misji otrzymujesz <b>Dukaty Archiwalne (🪙)</b>.',
+                shopIntro: 'Wymieniaj zdobyte dukaty (🪙) na historyczne motywy mapy, średniowieczne ikony pinezek oraz Lupę Archiwisty 2.5x:',
+                showTipsLbl: '💡 Pokazuj paski podpowiedzi nad mapą',
+                strictModeLbl: '🎓 Tryb naukowy (ukryj misje i dukaty)',
+                dontShowLbl: 'Nie pokazuj przy starcie',
+                btnStart: '🚀 Do mapy',
+                showWhereBtn: '👁️ Gdzie to?',
+                doneBadge: '✅ Ukończono',
+                buyBtn: 'Odblokuj za',
+                equipBtn: 'Wybierz',
+                equippedBtn: '✓ Aktywne',
+                cards: [
+                    { t: '📜 1. Tryb „Skan” i „Mapa”', d: 'Domyślnie otwiera się oryginalny skan z archiwum Wikimedia. Przełączaj mapy przyciskami <b>◀ ▶</b> na dole lub otwórz <b>🔍 Oryg.</b> w pełnej rozdzielczości.' },
+                    { t: '🌓 2. Tryb „Nałożenie” + Obrót 360°', d: 'Nakłada dawną mapę półprzezroczysto na współczesną! Kliknij <b>📌 Mapa ➔ ✋ Skan</b> na dole, aby przesuwać i <b>obracać skan dwoma palcami</b> (lub suwakiem <b>🔄 Kąt</b>).' },
+                    { t: '🌗 3. Tryb „Kurtyna”', d: 'Przesuwaj złoty suwak <b>◀|▶</b> w lewo i prawo, aby na żywo porównać dawną rycinę ze współczesną mapą.' },
+                    { t: '🔸 4. Złota oś czasu i Paszport', d: 'Nad suwakiem czasu świecą się <b>złote daty prawdziwych map</b>. W „Paszporcie” znajdziesz dawne nazwy (np. niemieckie) i zabytki w okolicy.' }
+                ],
+                modeTips: {
+                    scan: '💡 <b>Tryb „Skan”:</b> Przełączaj dawne mapy przyciskami <b>◀ ▶</b> na dole, powiększaj lub obracaj o 360° suwakiem <b>🔄 Kąt</b>.',
+                    map: '💡 <b>Tryb „Mapa”:</b> Kliknij dowolną pinezkę na mapie lub kartę w „Paszporcie”, aby przeczytać historię obiektu.',
+                    overlay: '💡 <b>Tryb „Nałożenie”:</b> Zmień przezroczystość suwakiem <b>Warstwa</b>. Kliknij <b>📌 Mapa ➔ ✋ Skan</b>, aby przesuwać i obracać skan dwoma palcami!',
+                    swipe: '💡 <b>Tryb „Kurtyna”:</b> Przeciągnij złoty uchwyt <b>◀|▶</b> na środku ekranu w lewo lub w prawo.'
+                },
+                quests: [
+                    { id: 'q_search', title: '1. Pierwszy zwiad', desc: 'Wyszukaj dowolne miasto/wieś lub kliknij nowy punkt na mapie współczesnej.', reward: 15, target: 'modernPane' },
+                    { id: 'q_ancient', title: '2. Przez wieki', desc: 'Wybierz na złotej osi czasu dowolną mapę starszą niż 1800 rok.', reward: 20, target: 'goldMilestonesBar' },
+                    { id: 'q_overlay_rot', title: '3. Mistrz triangulacji', desc: 'Włącz tryb „🌓 Nałoż.” i obróć mapę suwakiem „🔄 Kąt” (lub dwoma palcami).', reward: 30, target: 'tabOverlayBtn' },
+                    { id: 'q_swipe', title: '4. Oko czasu', desc: 'Włącz tryb „🌗 Kurtyna” i przesuń złoty separator ◀|▶.', reward: 20, target: 'tabSwipeBtn' },
+                    { id: 'q_passport', title: '5. Kronikarz lokalny', desc: 'Kliknij dowolną kartę zabytku w „Paszporcie” po prawej stronie.', reward: 15, target: 'passportPanel' }
+                ]
+            },
+            de: {
+                modalTitle: '🧭 Entdeckertagebuch & Hilfe',
+                rankLabel: 'Rang:',
+                coinsWord: 'Dukaten',
+                ranks: ['I. Wanderer', 'II. Topograph', 'III. Königlicher Kartograph', 'IV. Archivwächter'],
+                tabGuide: 'Hilfe & Anleitung',
+                tabQuests: 'Missionen (Tutorial)',
+                tabShop: 'Artefakt-Laden',
+                guideIntro: 'Klicken Sie auf <b>einen beliebigen Ort</b> auf der modernen Karte (oder suchen Sie oben), um echte Archivkarten vor 1945, historische Ortsnamen und Chroniken zu laden.',
+                questsIntro: 'Klicken Sie auf <b>„👁️ Wo ist das?“</b> — das Fenster schließt sich und die gesuchte Schaltfläche leuchtet golden! Für Missionen erhalten Sie <b>Archiv-Dukaten (🪙)</b>.',
+                shopIntro: 'Tauschen Sie verdiente Dukaten (🪙) gegen historische Kartenthemen, mittelalterliche Pin-Symbole und die 2.5x Archiv-Lupe:',
+                showTipsLbl: '💡 Kurztipps über der Karte anzeigen',
+                strictModeLbl: '🎓 Wissenschaftlicher Modus (Missionen ausblenden)',
+                dontShowLbl: 'Beim Start nicht zeigen',
+                btnStart: '🚀 Zur Karte',
+                showWhereBtn: '👁️ Wo ist das?',
+                doneBadge: '✅ Erledigt',
+                buyBtn: 'Freischalten für',
+                equipBtn: 'Wählen',
+                equippedBtn: '✓ Aktiv',
+                cards: [
+                    { t: '📜 1. Modus „Scan“ & „Karte“', d: 'Standardmäßig öffnet sich der historische Original-Scan. Blättern Sie unten mit <b>◀ ▶</b> oder öffnen Sie <b>🔍 Orig.</b> in voller Auflösung.' },
+                    { t: '🌓 2. Modus „Überlagerung“ + 360°-Drehung', d: 'Legt die alte Karte halbtransparent über die moderne! Klicken Sie unten auf <b>📌 Karte ➔ ✋ Scan</b>, um den Scan mit zwei Fingern oder dem <b>🔄 Winkel</b>-Regler zu drehen.' },
+                    { t: '🌗 3. Modus „Vorhang“', d: 'Ziehen Sie den goldenen Teiler <b>◀|▶</b> nach links oder rechts, um Epochen direkt zu vergleichen.' },
+                    { t: '🔸 4. Goldene Zeitleiste & Pass', d: 'Über dem Zeitregler leuchten <b>goldene Daten echter Karten</b>. Im „Pass“ rechts stehen historische Ortsnamen und Denkmäler.' }
+                ],
+                modeTips: {
+                    scan: '💡 <b>Modus „Scan“:</b> Blättern Sie unten mit <b>◀ ▶</b>, zoomen Sie mit ➕➖ oder drehen Sie den Scan um 360° mit dem <b>🔄 Winkel</b>-Regler.',
+                    map: '💡 <b>Modus „Karte“:</b> Klicken Sie auf einen Pin oder eine Karte im „Pass“, um historische Details zu lesen.',
+                    overlay: '💡 <b>Modus „Überlagerung“:</b> Ändern Sie unten die Deckkraft. Klicken Sie auf <b>📌 Karte ➔ ✋ Scan</b>, um den Scan frei zu bewegen und zu drehen!',
+                    swipe: '💡 <b>Modus „Vorhang“:</b> Ziehen Sie den goldenen Griff <b>◀|▶</b> in der Mitte nach links oder rechts.'
+                },
+                quests: [
+                    { id: 'q_search', title: '1. Erste Erkundung', desc: 'Suchen Sie einen Ort oder klicken Sie auf einen neuen Punkt auf der modernen Karte.', reward: 15, target: 'modernPane' },
+                    { id: 'q_ancient', title: '2. Durch die Jahrhunderte', desc: 'Wählen Sie unten auf der goldenen Leiste eine Karte vor dem Jahr 1800.', reward: 20, target: 'goldMilestonesBar' },
+                    { id: 'q_overlay_rot', title: '3. Triangulations-Meister', desc: 'Aktivieren Sie „🌓 Überlag.“ und drehen Sie den Scan mit dem Winkel-Regler.', reward: 30, target: 'tabOverlayBtn' },
+                    { id: 'q_swipe', title: '4. Auge der Zeit', desc: 'Aktivieren Sie „🌗 Vorhang“ und bewegen Sie den goldenen Teiler ◀|▶.', reward: 20, target: 'tabSwipeBtn' },
+                    { id: 'q_passport', title: '5. Chronist', desc: 'Klicken Sie auf eine Denkmal-Karte im „Pass“ rechts.', reward: 15, target: 'passportPanel' }
+                ]
+            }
+        };
+
+        const SHOP_CATALOG = [
+            { id: 'skin_sepia', type: 'skin', cost: 0, title: '📜 Классическая сепия (Базовый)', desc: 'Тёплый пергаментный фильтр старинного атласа' },
+            { id: 'skin_blueprint', type: 'skin', cost: 25, title: '🌌 Ночной архив (Синий чертёж)', desc: 'Контрастный тёмно-синий режим ночного картографа' },
+            { id: 'skin_mercator', type: 'skin', cost: 35, title: '🌿 Изумрудный атлас Меркатора', desc: 'Старинная гравюрная тонировка XVI века с изумрудной рамкой' },
+            { id: 'skin_genshtab', type: 'skin', cost: 40, title: '📐 Военная топография (Генштаб)', desc: 'Высококонтрастный чёткий профиль для чтения мелких схем' },
+            { id: 'pins_default', type: 'pins', cost: 0, title: '🟢 Классические сферы (Базовые)', desc: 'Стандартные маркеры: 🟢 Главные, 🟡 Памятники, 🔴 Окрестности' },
+            { id: 'pins_medieval', type: 'pins', cost: 25, title: '🏰 Средневековые печати', desc: 'Заменяет маркеры на карте на: 🏰 Твердыни, ⚔️ Памятники, 📜 Летопись' },
+            { id: 'pins_royal', type: 'pins', cost: 35, title: '👑 Королевский флот и корона', desc: 'Заменяет маркеры на карте на: 👑 Столицы, 🏛️ Архитектура, ⚓ Гавани' },
+            { id: 'tool_loupe', type: 'tool', cost: 30, title: '🔍 Лупа Архивариуса (2.5x)', desc: 'Включает круглое увеличительное стекло при наведении на мелкий шрифт скана' }
+        ];
+
+        let explorerState = {
+            coins: 20, // Стартовый бонус первооткрывателя
+            avatar: '🧭',
+            completedQuests: {},
+            visitedPlacesCount: 0,
+            unlockedItems: { skin_sepia: true, pins_default: true },
+            activeSkin: 'skin_sepia',
+            activePins: 'pins_default',
+            loupeEnabled: false,
+            showTips: true,
+            strictMode: false
+        };
+
+        function loadExplorerState() {
+            try {
+                const raw = localStorage.getItem('atlas_explorer_state_v22');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    explorerState = { ...explorerState, ...parsed };
+                }
+            } catch(e) {}
+            applyExplorerStateToUI();
+        }
+
+        function saveExplorerState() {
+            try {
+                localStorage.setItem('atlas_explorer_state_v22', JSON.stringify(explorerState));
+            } catch(e) {}
+        }
+
+        function getExplorerRankTitle() {
+            const g = guideI18n[currentLang] || guideI18n.ru;
+            const doneCount = Object.keys(explorerState.completedQuests).length;
+            if (doneCount >= 5 || explorerState.coins >= 110) return g.ranks[3];
+            if (doneCount >= 3 || explorerState.coins >= 65) return g.ranks[2];
+            if (doneCount >= 1 || explorerState.coins >= 35) return g.ranks[1];
+            return g.ranks[0];
+        }
+
+        function getPinSymbolsSet() {
+            if (explorerState.activePins === 'pins_medieval') return { fact: '🏰', hypo: '⚔️', myth: '📜' };
+            if (explorerState.activePins === 'pins_royal') return { fact: '👑', hypo: '🏛️', myth: '⚓' };
+            return { fact: '🟢', hypo: '🟡', myth: '🔴' };
+        }
+
+        function completeQuest(questId) {
+            if (explorerState.completedQuests[questId]) return;
+            const g = guideI18n[currentLang] || guideI18n.ru;
+            const qObj = g.quests.find(q => q.id === questId);
+            if (!qObj) return;
+
+            explorerState.completedQuests[questId] = true;
+            explorerState.coins += qObj.reward;
+            saveExplorerState();
+            applyExplorerStateToUI();
+
+            if (!explorerState.strictMode) {
+                showQuestToast(qObj.title, `+${qObj.reward} 🪙 (${getExplorerRankTitle()})`);
+            }
+        }
+
+        let toastTimer = null;
+        function showQuestToast(title, sub) {
+            const toast = document.getElementById('questToast');
+            if (!toast) return;
+            document.getElementById('questToastTitle').innerText = title;
+            document.getElementById('questToastDesc').innerText = sub;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 4200);
+        }
+
+        function updateContextTipBanner() {
+            const bar = document.getElementById('contextTipBar');
+            const txt = document.getElementById('contextTipText');
+            if (!bar || !txt) return;
+            if (!explorerState.showTips) {
+                bar.classList.add('hidden');
+                return;
+            }
+            bar.classList.remove('hidden');
+            const g = guideI18n[currentLang] || guideI18n.ru;
+            txt.innerHTML = g.modeTips[rightMode] || g.modeTips.scan;
+        }
+
+        function toggleContextTips(enable) {
+            explorerState.showTips = !!enable;
+            const chk = document.getElementById('showContextTipsChk');
+            if (chk) chk.checked = explorerState.showTips;
+            saveExplorerState();
+            updateContextTipBanner();
+        }
+
+        function toggleStrictAcademicMode(enable) {
+            explorerState.strictMode = !!enable;
+            const chk = document.getElementById('strictAcademicModeChk');
+            if (chk) chk.checked = explorerState.strictMode;
+            saveExplorerState();
+            applyExplorerStateToUI();
+        }
+
+        function selectExplorerAvatar(av, btnEl) {
+            explorerState.avatar = av;
+            document.querySelectorAll('.avatar-Option').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            saveExplorerState();
+            applyExplorerStateToUI();
+        }
+
+        function switchDiaryTab(tabName) {
+            ['guide', 'quests', 'shop'].forEach(t => {
+                const cap = t.charAt(0).toUpperCase() + t.slice(1);
+                const btn = document.getElementById('dTab' + cap + 'Btn');
+                const pane = document.getElementById('diaryPane' + cap);
+                if (btn) btn.classList.toggle('active', t === tabName);
+                if (pane) pane.classList.toggle('active', t === tabName);
+            });
+            renderDiaryModalContents();
+        }
+
+        function highlightInterfaceTarget(targetId) {
+            closeWelcomeModal();
+            // Если цель на мобильном в другой панели — переключаем мобильную вкладку
+            if (window.innerWidth <= 950) {
+                if (targetId === 'modernPane') switchMobilePane('modernPane', document.getElementById('mobBtnMod'));
+                else if (targetId === 'passportPanel') switchMobilePane('passportPanel', document.getElementById('mobBtnPass'));
+                else switchMobilePane('historicPane', document.getElementById('mobBtnHist'));
+            }
+            const el = document.getElementById(targetId);
+            if (!el) return;
+            document.querySelectorAll('.quest-target-highlight').forEach(x => x.classList.remove('quest-target-highlight'));
+            el.classList.add('quest-target-highlight');
+            setTimeout(() => el.classList.remove('quest-target-highlight'), 5500);
+        }
+
+        function buyOrEquipShopItem(itemId) {
+            const item = SHOP_CATALOG.find(x => x.id === itemId);
+            if (!item) return;
+
+            if (!explorerState.unlockedItems[itemId]) {
+                if (explorerState.coins < item.cost) return;
+                explorerState.coins -= item.cost;
+                explorerState.unlockedItems[itemId] = true;
+            }
+
+            if (item.type === 'skin') {
+                explorerState.activeSkin = itemId;
+            } else if (item.type === 'pins') {
+                explorerState.activePins = itemId;
+                // Обновляем символы текущих пинов
+                const syms = getPinSymbolsSet();
+                currentPinsList.forEach(p => {
+                    const cleanShort = p.shortLabel.replace(/^[^\s]+\s*/, '');
+                    const cleanFull = p.fullLabel.replace(/^[^\s]+\s*/, '');
+                    const s = syms[p.type] || '🟢';
+                    p.shortLabel = `${s} ${cleanShort}`;
+                    p.fullLabel = `${s} ${cleanFull}`;
+                });
+                renderHistoricalPins();
+            } else if (item.type === 'tool' && itemId === 'tool_loupe') {
+                explorerState.loupeEnabled = !explorerState.loupeEnabled;
+            }
+
+            saveExplorerState();
+            applyExplorerStateToUI();
+            renderDiaryModalContents();
+        }
+
+        function toggleArchivistLoupe() {
+            if (!explorerState.unlockedItems['tool_loupe']) {
+                openWelcomeModal('shop');
+                return;
+            }
+            explorerState.loupeEnabled = !explorerState.loupeEnabled;
+            saveExplorerState();
+            applyExplorerStateToUI();
+        }
+
+        function applyExplorerStateToUI() {
+            const g = guideI18n[currentLang] || guideI18n.ru;
+            const rankTitle = getExplorerRankTitle();
+            const shortRank = rankTitle.split('. ')[1] || rankTitle;
+
+            const hudBtn = document.getElementById('explorerHudBtn');
+            if (hudBtn) hudBtn.classList.toggle('strict-hidden', !!explorerState.strictMode);
+
+            const profBar = document.getElementById('explorerProfileBar');
+            const qTabBtn = document.getElementById('dTabQuestsBtn');
+            const sTabBtn = document.getElementById('dTabShopBtn');
+            if (profBar) profBar.style.display = explorerState.strictMode ? 'none' : 'flex';
+            if (qTabBtn) qTabBtn.style.display = explorerState.strictMode ? 'none' : 'inline-flex';
+            if (sTabBtn) sTabBtn.style.display = explorerState.strictMode ? 'none' : 'inline-flex';
+
+            const avEl = document.getElementById('hudAvatarIcon');
+            const rnkEl = document.getElementById('hudRankName');
+            const coinsEl = document.getElementById('hudCoinsCount');
+            if (avEl) avEl.innerText = explorerState.avatar || '🧭';
+            if (rnkEl) rnkEl.innerText = shortRank;
+            if (coinsEl) coinsEl.innerText = explorerState.coins;
+
+            // Применяем выбранный скин к #historicPane
+            const histPane = document.getElementById('historicPane');
+            if (histPane) {
+                histPane.classList.remove('skin-blueprint', 'skin-mercator', 'skin-genshtab');
+                if (explorerState.activeSkin === 'skin_blueprint') histPane.classList.add('skin-blueprint');
+                if (explorerState.activeSkin === 'skin_mercator') histPane.classList.add('skin-mercator');
+                if (explorerState.activeSkin === 'skin_genshtab') histPane.classList.add('skin-genshtab');
+            }
+
+            // Кнопка Лупы
+            const loupeBtn = document.getElementById('loupeToolBtn');
+            const loupeEl = document.getElementById('archivistLoupe');
+            if (loupeBtn) {
+                loupeBtn.classList.toggle('active-tool', !!explorerState.loupeEnabled);
+                loupeBtn.innerText = explorerState.unlockedItems['tool_loupe'] ? '🔍' : '🔒🔍';
+            }
+            if (loupeEl && !explorerState.loupeEnabled) {
+                loupeEl.classList.remove('active');
+            }
+
+            updateContextTipBanner();
+        }
+
+        function renderDiaryModalContents() {
+            const g = guideI18n[currentLang] || guideI18n.ru;
+            document.getElementById('modalMainTitle').innerText = g.modalTitle;
+            document.getElementById('profileRankLabel').innerText = g.rankLabel;
+            document.getElementById('profileRankValue').innerText = getExplorerRankTitle();
+            document.getElementById('profileCoinsValue').innerText = explorerState.coins;
+            document.getElementById('profileCoinsWord').innerText = g.coinsWord;
+
+            document.getElementById('dTabGuideLbl').innerText = g.tabGuide;
+            document.getElementById('dTabQuestsLbl').innerText = g.tabQuests;
+            document.getElementById('dTabShopLbl').innerText = g.tabShop;
+
+            document.getElementById('guideIntroText').innerHTML = g.guideIntro;
+            document.getElementById('questsIntroText').innerHTML = g.questsIntro;
+            document.getElementById('shopIntroText').innerHTML = g.shopIntro;
+
+            document.getElementById('lblShowContextTips').innerText = g.showTipsLbl;
+            document.getElementById('lblStrictMode').innerText = g.strictModeLbl;
+            document.getElementById('lblDontShowAgain').innerText = g.dontShowLbl;
+            document.getElementById('btnStartAtlasText').innerText = g.btnStart;
+
+            // Рендер карточек справки
+            const cardsBox = document.getElementById('guideGridCards');
+            if (cardsBox) {
+                cardsBox.innerHTML = g.cards.map(c => `
+                    <div class="guide-item">
+                        <b>${c.t}</b>
+                        <span>${c.d}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Рендер списка квестов
+            const qBox = document.getElementById('questListContainer');
+            if (qBox) {
+                qBox.innerHTML = g.quests.map(q => {
+                    const isDone = !!explorerState.completedQuests[q.id];
+                    return `
+                        <div class="quest-card ${isDone ? 'done' : ''}">
+                            <div class="quest-info">
+                                <b>${isDone ? '✅ ' : '🎯 '}${q.title}</b>
+                                <span>${q.desc}</span>
+                            </div>
+                            <div class="quest-actions">
+                                <span class="reward-badge">+${q.reward} 🪙</span>
+                                ${isDone
+                                    ? `<span style="font-size:0.72rem;color:#4cd137;font-weight:bold;">${g.doneBadge}</span>`
+                                    : `<button class="btn-show-where" onclick="highlightInterfaceTarget('${q.target}')">${g.showWhereBtn}</button>`
+                                }
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Рендер Лавки Артефактов
+            const sBox = document.getElementById('shopListContainer');
+            if (sBox) {
+                sBox.innerHTML = SHOP_CATALOG.map(item => {
+                    const unlocked = !!explorerState.unlockedItems[item.id];
+                    const isEquipped = (item.type === 'skin' && explorerState.activeSkin === item.id) ||
+                                       (item.type === 'pins' && explorerState.activePins === item.id) ||
+                                       (item.type === 'tool' && explorerState.loupeEnabled);
+                    const canAfford = explorerState.coins >= item.cost;
+
+                    let btnHtml = '';
+                    if (unlocked) {
+                        btnHtml = `<button class="btn-buy-item ${isEquipped ? 'equipped' : ''}" onclick="buyOrEquipShopItem('${item.id}')">${isEquipped ? g.equippedBtn : g.equipBtn}</button>`;
+                    } else {
+                        btnHtml = `<button class="btn-buy-item" ${canAfford ? '' : 'disabled'} onclick="buyOrEquipShopItem('${item.id}')">${g.buyBtn} ${item.cost} 🪙</button>`;
+                    }
+
+                    return `
+                        <div class="shop-card">
+                            <div class="shop-info">
+                                <b>${item.title}</b>
+                                <span>${item.desc}</span>
+                            </div>
+                            <div class="quest-actions">
+                                ${btnHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
         // JSONP-загрузчик для MediaWiki API
         function fetchWikimediaJsonp(apiUrl) {
             return new Promise((resolve) => {
@@ -572,7 +1197,7 @@
             const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'atlas_v2.1.html';
+            a.download = 'atlas_v2.5.html';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -638,7 +1263,13 @@
             console.error('Map init error:', err);
         }
 
-        // Генератор польских/международных фонетических вариантов для кириллических запросов (например: "Ленгово, поморское, польша" -> "Łęgowo, pomorskie, Polska" / "Legowo, pomorskie, Polska")
+        // Вспомогательная замена слов по границам (исправляет баг JS, где \b НЕ работает с кириллицей!)
+        function replaceCyrillicWord(str, cyrPattern, replacement) {
+            const rx = new RegExp(`(^|[\\s,.\\-()])(${cyrPattern})(?=$|[\\s,.\\-()])`, 'gi');
+            return str.replace(rx, (match, prefix) => prefix + replacement);
+        }
+
+        // Генератор польских/международных фонетических вариантов для кириллических запросов (например: "цеплево, поморское" -> "Cieplewo, pomorskie")
         function buildCyrillicSearchFallbacks(rawQuery) {
             const variants = new Set();
             const q = rawQuery.trim();
@@ -648,63 +1279,100 @@
                 return Array.from(variants);
             }
 
-            // Словарь перевода частых регионов/стран в поисковых запросах
+            // Словарь перевода частых регионов/стран (БЕЗ сломанного \b!)
             const regionDict = [
-                [/\bпоморское(?:\s+воеводство)?\b/gi, 'pomorskie'],
-                [/\bпоморське(?:\s+воєводство)?\b/gi, 'pomorskie'],
-                [/\bмазовецкое(?:\s+воеводство)?\b/gi, 'mazowieckie'],
-                [/\bмалопольское(?:\s+воеводство)?\b/gi, 'małopolskie'],
-                [/\bвеликопольское(?:\s+воеводство)?\b/gi, 'wielkopolskie'],
-                [/\bсилезское(?:\s+воеводство)?\b/gi, 'śląskie'],
-                [/\bнижнесилезское(?:\s+воеводство)?\b/gi, 'dolnośląskie'],
-                [/\bварминьско-мазурское\b/gi, 'warmińsko-mazurskie'],
-                [/\bзападно-поморское\b/gi, 'zachodniopomorskie'],
-                [/\bгданьский(?:\s+повят|\s+повет)?\b/gi, 'powiat gdański'],
-                [/\bпольша\b/gi, 'Polska'],
-                [/\bпольща\b/gi, 'Polska'],
-                [/\bгермания\b/gi, 'Deutschland'],
-                [/\bнімеччина\b/gi, 'Deutschland'],
-                [/\bукраина\b/gi, 'Україна']
+                ['поморское(?:\\s+воеводство)?', 'pomorskie'],
+                ['поморське(?:\\s+воєводство)?', 'pomorskie'],
+                ['поморье', 'Pomorze'],
+                ['мазовецкое(?:\\s+воеводство)?', 'mazowieckie'],
+                ['малопольское(?:\\s+воеводство)?', 'małopolskie'],
+                ['великопольское(?:\\s+воеводство)?', 'wielkopolskie'],
+                ['силезское(?:\\s+воеводство)?', 'śląskie'],
+                ['нижнесилезское(?:\\s+воеводство)?', 'dolnośląskie'],
+                ['варминьско-мазурское', 'warmińsko-mazurskie'],
+                ['западно-поморское', 'zachodniopomorskie'],
+                ['гданьский(?:\\s+повят|\\s+повет)?', 'powiat gdański'],
+                ['польша', 'Polska'],
+                ['польща', 'Polska'],
+                ['германия', 'Deutschland'],
+                ['німеччина', 'Deutschland'],
+                ['украина', 'Україна']
             ];
 
-            // Прямой словарь частых малых сёл и городов
+            // Прямой словарь малых сёл и городов Поморья и окрестностей (БЕЗ сломанного \b!)
             const directVillageDict = [
-                [/\bленгово\b/gi, 'Łęgowo'],
-                [/\bрусочин\b/gi, 'Rusocin'],
-                [/\bстрашин\b/gi, 'Straszyn'],
-                [/\bюшково\b/gi, 'Juszkowo'],
-                [/\bрожины\b/gi, 'Różyny'],
-                [/\bжукчин\b/gi, 'Żukczyn'],
-                [/\bротманка\b/gi, 'Rotmanka'],
-                [/\bборково\b/gi, 'Borkowo'],
-                [/\bцеплево\b/gi, 'Cieplewo'],
-                [/\bрокитница\b/gi, 'Rokitnica'],
-                [/\bрадуница\b/gi, 'Radunica'],
-                [/\bпрущ[\s\-]*гданьский\b/gi, 'Pruszcz Gdański'],
-                [/\bпщулки\b/gi, 'Pszczółki'],
-                [/\bкольбуды\b/gi, 'Kolbudy'],
-                [/\bтрамбки[\s\-]*вельке\b/gi, 'Trąbki Wielkie'],
-                [/\bцедры[\s\-]*вельке\b/gi, 'Cedry Wielkie']
+                ['цеплево', 'Cieplewo'],
+                ['ленгово', 'Łęgowo'],
+                ['русочин', 'Rusocin'],
+                ['страшин', 'Straszyn'],
+                ['юшково', 'Juszkowo'],
+                ['рожины', 'Różyny'],
+                ['жукчин', 'Żukczyn'],
+                ['ротманка', 'Rotmanka'],
+                ['борково', 'Borkowo'],
+                ['рокитница', 'Rokitnica'],
+                ['радуница', 'Radunica'],
+                ['прущ[\\s\\-]*гданьский', 'Pruszcz Gdański'],
+                ['прущ', 'Pruszcz Gdański'],
+                ['пщулки', 'Pszczółki'],
+                ['кольбуды', 'Kolbudy'],
+                ['клодава', 'Kłodawa'],
+                ['ульковы', 'Ulkowy'],
+                ['трамбки[\\s\\-]*вельке', 'Trąbki Wielkie'],
+                ['цедры[\\s\\-]*вельке', 'Cedry Wielkie'],
+                ['привидз', 'Przywidz'],
+                ['собовидз', 'Sobowidz'],
+                ['милобондз', 'Miłobądz'],
+                ['тчев', 'Tczew'],
+                ['тшев', 'Tczew'],
+                ['сопот', 'Sopot'],
+                ['гдыня', 'Gdynia'],
+                ['вейхерово', 'Wejherowo'],
+                ['картузы', 'Kartuzy'],
+                ['мальборк', 'Malbork'],
+                ['эльблонг', 'Elbląg'],
+                ['слупск', 'Słupsk'],
+                ['хоjнице', 'Chojnice'],
+                ['хойнице', 'Chojnice'],
+                ['косьцежина', 'Kościerzyna'],
+                ['пуцк', 'Puck'],
+                ['владыславово', 'Władysławowo'],
+                ['хель', 'Hel'],
+                ['новэ[\\s\\-]*място', 'Nowe Miasto'],
+                ['старогард[\\s\\-]*гданьский', 'Starogard Gdański'],
+                ['старогард', 'Starogard Gdański'],
+                ['квидзын', 'Kwidzyn'],
+                ['штум', 'Sztum'],
+                ['леборк', 'Lębork'],
+                ['ленборк', 'Lębork'],
+                ['бытув', 'Bytów']
             ];
 
             let mappedQ = q;
-            regionDict.forEach(([rx, rep]) => { mappedQ = mappedQ.replace(rx, rep); });
-            directVillageDict.forEach(([rx, rep]) => { mappedQ = mappedQ.replace(rx, rep); });
-            if (mappedQ !== q) variants.add(mappedQ);
+            regionDict.forEach(([pat, rep]) => { mappedQ = replaceCyrillicWord(mappedQ, pat, rep); });
+            directVillageDict.forEach(([pat, rep]) => { mappedQ = replaceCyrillicWord(mappedQ, pat, rep); });
+            if (mappedQ !== q) {
+                variants.add(mappedQ);
+            }
 
-            // Польская фонетическая транслитерация кириллического названия села (например: Ленгово -> Legowo / Łęgowo, Русочин -> Rusocin / Rusoczyn)
-            function cyrToPolishPhonetic(str, useDiacritics) {
+            // Польская фонетическая транслитерация кириллического названия села (поддерживает и твёрдые ce/se/ze, и мягкие польские cie/sie/zie/nie!)
+            function cyrToPolishPhonetic(str, useDiacritics, useSoftI = false) {
                 let s = str;
-                regionDict.forEach(([rx, rep]) => { s = s.replace(rx, rep); });
-                directVillageDict.forEach(([rx, rep]) => { s = s.replace(rx, rep); });
+                regionDict.forEach(([pat, rep]) => { s = replaceCyrillicWord(s, pat, rep); });
+                directVillageDict.forEach(([pat, rep]) => { s = replaceCyrillicWord(s, pat, rep); });
 
-                // Специальные польские буквосочетания
                 const rules = [
+                    [/тш/g, useSoftI ? 'tcz' : 'trz'], [/Тш/g, useSoftI ? 'Tcz' : 'Trz'],
+                    [/дж/g, useDiacritics ? 'dż' : 'dz'], [/Дж/g, useDiacritics ? 'Dż' : 'Dz'],
                     [/щ/g, 'szcz'], [/Щ/g, 'Szcz'],
                     [/ш/g, 'sz'], [/Ш/g, 'Sz'],
                     [/ж/g, useDiacritics ? 'ż' : 'z'], [/Ж/g, useDiacritics ? 'Ż' : 'Z'],
                     [/ч(и|е)/g, 'c$1'], [/Ч(и|е)/g, 'C$1'],
                     [/ч/g, 'cz'], [/Ч/g, 'Cz'],
+                    [/це/g, useSoftI ? 'cie' : 'ce'], [/Це/g, useSoftI ? 'Cie' : 'Ce'],
+                    [/се/g, useSoftI ? 'sie' : 'se'], [/Се/g, useSoftI ? 'Sie' : 'Se'],
+                    [/зе/g, useSoftI ? 'zie' : 'ze'], [/Зе/g, useSoftI ? 'Zie' : 'Ze'],
+                    [/не/g, useSoftI ? 'nie' : 'ne'], [/Не/g, useSoftI ? 'Nie' : 'Ne'],
                     [/ц/g, 'c'], [/Ц/g, 'C'],
                     [/х/g, 'ch'], [/Х/g, 'Ch'],
                     [/ю/g, 'ju'], [/Ю/g, 'Ju'],
@@ -741,25 +1409,27 @@
                 return s;
             }
 
-            variants.add(cyrToPolishPhonetic(q, true));
-            variants.add(cyrToPolishPhonetic(q, false));
+            // Сначала добавляем мягкие польские варианты (Cieplewo), затем обычные (Legowo / Łęgowo)
+            variants.add(cyrToPolishPhonetic(q, true, true));
+            variants.add(cyrToPolishPhonetic(q, false, true));
+            variants.add(cyrToPolishPhonetic(q, true, false));
+            variants.add(cyrToPolishPhonetic(q, false, false));
             variants.add(translitCyrToLat(mappedQ));
 
-            // Если в запросе несколько слов через запятую, добавляем также первое слово + страну
             const parts = mappedQ.split(',').map(p => p.trim()).filter(Boolean);
             if (parts.length >= 2) {
-                variants.add(`${cyrToPolishPhonetic(parts[0], true)}, ${parts[parts.length - 1]}`);
-                variants.add(`${cyrToPolishPhonetic(parts[0], false)}, ${parts[parts.length - 1]}`);
+                variants.add(`${cyrToPolishPhonetic(parts[0], true, true)}, ${parts[parts.length - 1]}`);
+                variants.add(`${cyrToPolishPhonetic(parts[0], true, false)}, ${parts[parts.length - 1]}`);
             }
             if (parts.length >= 1) {
-                variants.add(cyrToPolishPhonetic(parts[0], true));
-                variants.add(cyrToPolishPhonetic(parts[0], false));
+                variants.add(cyrToPolishPhonetic(parts[0], true, true));
+                variants.add(cyrToPolishPhonetic(parts[0], true, false));
             }
 
             return Array.from(variants).filter(v => v && v.length >= 2);
         }
 
-        // Умный многоступенчатый поиск населённых пунктов (понимает русский, украинский, польский, немецкий даже для малых сёл!)
+        // Умный многоступенчатый поиск населённых пунктов v2.4 (без ложных прыжков на вокзал Гдыня-Главная!)
         async function searchAnyPlace() {
             const q = document.getElementById('globalSearchInput').value.trim();
             if (!q) return;
@@ -773,13 +1443,23 @@
                     const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(candidate)}&limit=8&accept-language=${currentLang},pl,uk,ru,de,en`);
                     const data = await res.json();
                     if (data && data.length > 0) {
+                        // Фильтруем только настоящие населённые пункты, реки, острова или исторические объекты (не случайные ларьки/остановки/улицы в чужой стране!)
                         let best = data.find(item =>
                             item.class === 'place' ||
                             item.class === 'boundary' ||
                             item.class === 'waterway' ||
                             item.class === 'historic' ||
-                            /city|town|village|hamlet|suburb|administrative|river|island/i.test(item.type || '')
-                        ) || data[0];
+                            /city|town|village|hamlet|suburb|administrative|river|island|municipality/i.test(item.type || '')
+                        );
+                        // Если точного класса place нет, берём data[0] только если первый фрагмент display_name совпадает с запросом
+                        if (!best) {
+                            const candFirst = candidate.split(',')[0].trim().toLowerCase();
+                            const dispFirst = (data[0].display_name || '').split(',')[0].trim().toLowerCase();
+                            if (dispFirst.includes(candFirst) || candFirst.includes(dispFirst)) {
+                                best = data[0];
+                            }
+                        }
+                        if (!best) continue;
 
                         const lat = parseFloat(best.lat);
                         const lon = parseFloat(best.lon);
@@ -790,18 +1470,39 @@
                     }
                 }
 
-                // Резервный поиск координат через Wikipedia API (если в OpenStreetMap вообще нет такого написания)
-                const wikiLangs = ['ru', 'uk', 'pl', 'de', 'en'];
+                // Резервный поиск через Wikipedia API со СТРОГОЙ проверкой совпадения заголовка статьи (чтобы никогда не прыгать на "Гдыня-Главная" при поиске "Цеплево"!)
+                const targetStems = candidateQueries.map(c => c.split(',')[0].trim().toLowerCase()).filter(s => s.length >= 3);
+                const wikiLangs = ['pl', 'ru', 'uk', 'de', 'en'];
+
                 for (const wLang of wikiLangs) {
-                    const firstPart = q.split(',')[0].trim();
-                    const wData = await fetchWikimediaJsonp(`https://${wLang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(firstPart)}&gsrlimit=5&prop=coordinates`);
+                    const searchWord = wLang === 'pl' ? (candidateQueries[1] || q).split(',')[0].trim() : q.split(',')[0].trim();
+                    const wData = await fetchWikimediaJsonp(`https://${wLang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(searchWord)}&gsrlimit=6&prop=coordinates|langlinks&lllang=pl`);
                     if (wData && wData.query && wData.query.pages) {
-                        const pageWithCoords = Object.values(wData.query.pages).find(p => p.coordinates && p.coordinates[0]);
-                        if (pageWithCoords) {
-                            const c = pageWithCoords.coordinates[0];
-                            const cleanWikiTitle = pageWithCoords.title.replace(/\s*\([^)]*\)/g, '').trim();
-                            exploreWorldPoint(c.lat, c.lon, cleanWikiTitle);
-                            return;
+                        const pages = Object.values(wData.query.pages).sort((a, b) => (a.index || 99) - (b.index || 99));
+                        for (const p of pages) {
+                            const cleanTitleLow = (p.title || '').replace(/\s*\([^)]*\)/g, '').trim().toLowerCase();
+                            const isTitleMatch = targetStems.some(st => cleanTitleLow === st || cleanTitleLow.includes(st) || st.includes(cleanTitleLow));
+                            if (!isTitleMatch) continue;
+
+                            if (p.coordinates && p.coordinates[0]) {
+                                const c = p.coordinates[0];
+                                const cleanWikiTitle = p.title.replace(/\s*\([^)]*\)/g, '').trim();
+                                exploreWorldPoint(c.lat, c.lon, cleanWikiTitle);
+                                return;
+                            }
+                            // Если в русской статье "Цеплево (Поморское воеводство)" нет тега координат, берём её польскую интервики-ссылку!
+                            if (p.langlinks && p.langlinks[0] && p.langlinks[0]['*']) {
+                                const plTitle = p.langlinks[0]['*'];
+                                const plData = await fetchWikimediaJsonp(`https://pl.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(plTitle)}&prop=coordinates`);
+                                if (plData && plData.query && plData.query.pages) {
+                                    const plPage = Object.values(plData.query.pages)[0];
+                                    if (plPage && plPage.coordinates && plPage.coordinates[0]) {
+                                        const c = plPage.coordinates[0];
+                                        exploreWorldPoint(c.lat, c.lon, plTitle.replace(/\s*\([^)]*\)/g, '').trim());
+                                        return;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -816,7 +1517,8 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => { exploreWorldPoint(pos.coords.latitude, pos.coords.longitude, null); },
-                    () => { exploreWorldPoint(54.2611, 18.6361, null); }
+                    () => { loadExplorerState();
+        exploreWorldPoint(54.2611, 18.6361, null); }
                 );
             }
         }
@@ -847,7 +1549,9 @@
             'гданьского', 'гданьский', 'варшава', 'warszawa', 'warsaw',
             'село', 'город', 'река', 'область', 'район', 'воеводство', 'повят', 'гмина', 'также', 'ранее',
             'between', 'from', 'until', 'since', 'under', 'part', 'kingdom', 'empire', 'republic', 'district', 'county',
-            'населения', 'площадь', 'центр', 'состав', 'года', 'году', 'годах', 'носил', 'название', 'крупнейший'
+            'known', 'formerly', 'called', 'named', 'located', 'situated', 'founded', 'established', 'first', 'mentioned',
+            'city', 'town', 'village', 'settlement', 'region', 'province', 'oblast', 'voivodeship', 'river', 'island',
+            'населения', 'площадь', 'центр', 'состав', 'года', 'году', 'годах', 'носил', 'название', 'крупнейший', 'известен'
         ]);
 
         // Словарь транслитерации кириллицы в латиницу (чтобы "Александровск" -> "Aleksandrovsk" для Викисклада)
@@ -867,11 +1571,44 @@
             }).join('');
         }
 
-        // База ключевых исторических экзонимов и архивных написаний для 100% попадания по старым картам
+        // База ключевых исторических экзонимов городов (Европа, Азия, Африка, Америка) + Автоматический парсер Wikipedia Redirects & Wikidata
         const HISTORICAL_EXONYMS_DB = {
             'гданьск': ['Danzig', 'Gdańsk', 'Gdansk', 'Gedanum'],
             'gdańsk': ['Danzig', 'Gdansk', 'Gedanum'],
             'gdansk': ['Danzig', 'Gdańsk', 'Gedanum'],
+            'сопот': ['Zoppot', 'Sopot'],
+            'sopot': ['Zoppot', 'Sopot'],
+            'гдыня': ['Gdingen', 'Gotenhafen', 'Gdynia'],
+            'gdynia': ['Gdingen', 'Gotenhafen', 'Gdynia'],
+            'тчев': ['Dirschau', 'Tczew'],
+            'тшев': ['Dirschau', 'Tczew'],
+            'tczew': ['Dirschau', 'Tczew'],
+            'мальборк': ['Marienburg', 'Malbork'],
+            'malbork': ['Marienburg', 'Malbork'],
+            'эльблонг': ['Elbing', 'Elbląg'],
+            'elbląg': ['Elbing', 'Elblag'],
+            'вейхерово': ['Neustadt in Westpreußen', 'Wejherowo'],
+            'wejherowo': ['Neustadt in Westpreußen', 'Wejherowo'],
+            'картузы': ['Karthaus', 'Kartuzy'],
+            'kartuzy': ['Karthaus', 'Kartuzy'],
+            'старогард-гданьский': ['Preußisch Stargard', 'Starogard Gdański'],
+            'starogard gdański': ['Preußisch Stargard', 'Starogard'],
+            'квидзын': ['Marienwerder', 'Kwidzyn'],
+            'kwidzyn': ['Marienwerder', 'Kwidzyn'],
+            'леборк': ['Lauenburg in Pommern', 'Lębork'],
+            'lębork': ['Lauenburg in Pommern', 'Lebork'],
+            'слупск': ['Stolp', 'Słupsk'],
+            'słupsk': ['Stolp', 'Slupsk'],
+            'колобжег': ['Kolberg', 'Kołobrzeg'],
+            'kołobrzeg': ['Kolberg', 'Kolobrzeg'],
+            'ольштын': ['Allenstein', 'Olsztyn'],
+            'olsztyn': ['Allenstein', 'Olsztyn'],
+            'торунь': ['Thorn', 'Toruń'],
+            'toruń': ['Thorn', 'Torun'],
+            'быдгощ': ['Bromberg', 'Bydgoszcz'],
+            'bydgoszcz': ['Bromberg', 'Bydgoszcz'],
+            'познань': ['Posen', 'Poznań'],
+            'poznań': ['Posen', 'Poznan'],
             'запорожье': ['Александровск', 'Aleksandrovsk', 'Alexandrovsk', 'Хортица', 'Khortytsia', 'Zaporizhzhia'],
             'запоріжжя': ['Олександрівськ', 'Александровск', 'Aleksandrovsk', 'Alexandrovsk', 'Хортиця'],
             'zaporizhia': ['Aleksandrovsk', 'Alexandrovsk', 'Александровск', 'Khortytsia'],
@@ -894,6 +1631,52 @@
             'харьков': ['Kharkov', 'Харьков', 'Charkow'],
             'дніпро': ['Екатеринослав', 'Ekaterinoslav', 'Yekaterinoslav', 'Катеринослав'],
             'днепр': ['Екатеринослав', 'Ekaterinoslav', 'Yekaterinoslav'],
+            'торонто': ['York', 'Fort York', 'Toronto'],
+            'toronto': ['York', 'Fort York', 'Toronto'],
+            'нью-йорк': ['New Amsterdam', 'New York', 'Nieuw Amsterdam'],
+            'new york': ['New Amsterdam', 'New York'],
+            'токио': ['Edo', 'Yedo', 'Jedo', 'Tokio', 'Tokyo'],
+            'tokyo': ['Edo', 'Yedo', 'Jedo', 'Tokio', 'Tokyo'],
+            'киото': ['Meaco', 'Miaco', 'Kioto', 'Kyoto'],
+            'kyoto': ['Meaco', 'Miaco', 'Kioto', 'Kyoto'],
+            'пекин': ['Peking', 'Pekin', 'Peiping', 'Beijing'],
+            'beijing': ['Peking', 'Pekin', 'Peiping', 'Beijing'],
+            'гуанчжоу': ['Canton', 'Kwangchow', 'Guangzhou'],
+            'guangzhou': ['Canton', 'Kwangchow', 'Guangzhou'],
+            'гонконг': ['Hong Kong', 'Victoria', 'Hongkong'],
+            'hong kong': ['Hong Kong', 'Victoria', 'Hongkong'],
+            'джакарта': ['Batavia', 'Jakarta'],
+            'jakarta': ['Batavia', 'Jakarta'],
+            'хошимин': ['Saigon', 'Gia Dinh'],
+            'ho chi minh city': ['Saigon', 'Gia Dinh'],
+            'мумбаи': ['Bombay', 'Mumbai'],
+            'mumbai': ['Bombay', 'Mumbai'],
+            'колката': ['Calcutta', 'Kolkata'],
+            'калькутта': ['Calcutta', 'Kolkata'],
+            'kolkata': ['Calcutta', 'Kolkata'],
+            'ченнаи': ['Madras', 'Chennai'],
+            'chennai': ['Madras', 'Chennai'],
+            'стамбул': ['Constantinople', 'Byzantium', 'Stamboul', 'Константинополь'],
+            'istanbul': ['Constantinople', 'Byzantium', 'Stamboul'],
+            'измир': ['Smyrna', 'Izmir'],
+            'izmir': ['Smyrna', 'Izmir'],
+            'киншаса': ['Léopoldville', 'Leopoldville', 'Kinshasa'],
+            'kinshasa': ['Léopoldville', 'Leopoldville', 'Kinshasa'],
+            'хараре': ['Salisbury', 'Harare'],
+            'harare': ['Salisbury', 'Harare'],
+            'мапуту': ['Lourenço Marques', 'Lourenco Marques', 'Maputo'],
+            'maputo': ['Lourenço Marques', 'Lourenco Marques', 'Maputo'],
+            'лубумбаши': ['Élisabethville', 'Elisabethville', 'Lubumbashi'],
+            'lubumbashi': ['Élisabethville', 'Elisabethville', 'Lubumbashi'],
+            'кисангани': ['Stanleyville', 'Kisangani'],
+            'kisangani': ['Stanleyville', 'Kisangani'],
+            'нджамена': ['Fort-Lamy', 'Fort Lamy'],
+            'бамако': ['Bamako', 'French Sudan'],
+            'банжул': ['Bathurst', 'Banjul'],
+            'banjul': ['Bathurst', 'Banjul'],
+            'конакри': ['Conakry', 'Konakry'],
+            'абиджан': ['Abidjan', 'Ivory Coast'],
+            'дакар': ['Dakar', 'Gorée'],
             'прущ-гданьский': ['Praust', 'Pruszcz Gdański'],
             'pruszcz gdański': ['Praust', 'Pruszcz'],
             'ленгово': ['Langenau', 'Łęgowo'],
@@ -901,19 +1684,76 @@
             'русочин': ['Russotschin', 'Rusocin'],
             'rusocin': ['Russotschin', 'Rusocin'],
             'страшин': ['Straschin', 'Straszyn'],
-            'straszyn': ['Straschin', 'Straszyn']
+            'straszyn': ['Straschin', 'Straszyn'],
+            'цеплево': ['Zipplau', 'Cieplewo', 'Praust'],
+            'cieplewo': ['Zipplau', 'Cieplewo', 'Praust'],
+            'рожины': ['Rosenberg', 'Różyny'],
+            'różyny': ['Rosenberg', 'Różyny'],
+            'жукчин': ['Sukczyn', 'Żukczyn'],
+            'żukczyn': ['Sukczyn', 'Żukczyn'],
+            'пщулки': ['Hohenstein', 'Pszczółki'],
+            'pszczółki': ['Hohenstein', 'Pszczółki'],
+            'юшково': ['Gischkau', 'Juszkowo'],
+            'juszkowo': ['Gischkau', 'Juszkowo'],
+            'ротманка': ['Rottmannsdorf', 'Rotmanka'],
+            'rotmanka': ['Rottmannsdorf', 'Rotmanka'],
+            'борково': ['Borkau', 'Borkowo'],
+            'borkowo': ['Borkau', 'Borkowo'],
+            'радуница': ['Radaunen', 'Radunica'],
+            'radunica': ['Radaunen', 'Radunica'],
+            'рокитница': ['Müggenhahl', 'Rokitnica'],
+            'rokitnica': ['Müggenhahl', 'Rokitnica']
         };
 
+        // Слой исторических / колониальных названий стран мира (для Азии, Африки, Ближнего Востока и Америки)
+        const HISTORICAL_COUNTRY_COLONIAL_DB = {
+            'Democratic Republic of the Congo': ['Belgian Congo', 'Congo Free State', 'Congo'],
+            'Republic of the Congo': ['French Congo', 'Middle Congo', 'Congo'],
+            'Zimbabwe': ['Southern Rhodesia', 'Rhodesia', 'Matabeleland'],
+            'Zambia': ['Northern Rhodesia', 'Rhodesia'],
+            'Ghana': ['Gold Coast', 'Ashanti'],
+            'Tanzania': ['Tanganyika', 'German East Africa', 'Zanzibar'],
+            'Namibia': ['German South West Africa', 'South West Africa'],
+            'Botswana': ['Bechuanaland'],
+            'Lesotho': ['Basutoland'],
+            'Malawi': ['Nyasaland'],
+            'Benin': ['Dahomey'],
+            'Burkina Faso': ['Upper Volta'],
+            'Mali': ['French Sudan'],
+            'Guinea': ['French Guinea'],
+            'Togo': ['Togoland'],
+            'Cameroon': ['Kamerun'],
+            'Ethiopia': ['Abyssinia', 'Ethiopia'],
+            'Somalia': ['Somaliland'],
+            'Mozambique': ['Portuguese East Africa', 'Mozambique'],
+            'Angola': ['Portuguese West Africa', 'Angola'],
+            'Sri Lanka': ['Ceylon', 'Taprobane'],
+            'Thailand': ['Siam'],
+            'Myanmar': ['Burma'],
+            'Iran': ['Persia'],
+            'Iraq': ['Mesopotamia'],
+            'Taiwan': ['Formosa'],
+            'Indonesia': ['Dutch East Indies', 'Java', 'Sumatra'],
+            'Vietnam': ['Indochina', 'Cochinchina', 'Tonkin', 'Annam'],
+            'Cambodia': ['Indochina', 'Cambodia'],
+            'Malaysia': ['Malaya', 'British Malaya'],
+            'Japan': ['Japonia', 'Nippon', 'Empire of Japan'],
+            'China': ['Chinese Empire', 'Tartary', 'Cathay', 'Qing'],
+            'Canada': ['Upper Canada', 'Lower Canada', 'New France', 'British North America']
+        };
+
+        // Проверка валидности исторического топонима (без обрезки кашубских/европейских диакритик À-ÿ, Ā-ž и без 3-буквенных огрызков вроде "Sop"!)
         function isValidHistoricalToponym(word) {
-            if (!word || word.length < 3 || word.length > 26) return false;
-            const clean = word.replace(/[^A-Za-zÄÖÜäöüßŚĆŻŹŁŃśćżźłńА-Яа-яЁёІіЇїЄєҐґ\-\s]/g, '').trim();
-            if (clean.length < 3) return false;
+            if (!word || word.length < 3 || word.length > 28) return false;
+            const clean = word.replace(/[^A-Za-zÀ-ɏА-Яа-яЁёІіЇїЄєҐґ\-\s]/g, '').trim();
+            // Разрешаем 3-буквенные названия только из точного белого списка (Edo, Рим, Уфа, Hel), а случайные 3-буквенные обрезки (Sop, der, und) блокируем!
+            if (clean.length < 4 && !/^(Edo|Ufa|Hel|Fes|Fez|Goa|Ur|Уфа|Рим|Хель|Эдо)$/i.test(clean)) return false;
             if (TOPONYM_STOPWORDS.has(clean.toLowerCase())) return false;
-            if (/^(Województwo|Powiat|Gmina|Pomorskie|Gdański|Polska|Polsce|Niemcy|Deutschland)$/i.test(clean)) return false;
+            if (/^(Województwo|Powiat|Gmina|Pomorskie|Gdański|Polska|Polsce|Niemcy|Deutschland|Toronto|Sopot)$/i.test(clean) && clean.toLowerCase() === (currentPlaceIntlCity || '').toLowerCase()) return true;
             return true;
         }
 
-        // Расширенный парсер исторических названий (ловит "до XXXX года — ...", "нем. ...", скобки и экзонимы)
+        // Расширенный парсер исторических названий (ловит "до XXXX года — ...", "назывался ...", языковые пометки, скобки + полную диакритику À-ɏ!)
         function extractOldNamesFromWikiText(text) {
             const found = new Set();
 
@@ -926,13 +1766,13 @@
             });
 
             if (text) {
-                const intro = text.slice(0, 900);
+                const intro = text.slice(0, 1200);
 
-                // 2. Конструкции вида "до 1921 года — Александровск", "до 1945 — Данциг", "ранее — ..."
-                const untilYearRegex = /(?:до\s+\d{4}(?:\s*[-—]\s*\d{4})?\s*(?:года|годов|р\.|року|r\.)?|ранее|бывш[а-я\.]*|dawniej|formerly)(?:\s+носил\s+название|\s+назывался)?\s*[—\-:]?\s*([A-ZÄÖÜŚĆŻŹŁА-ЯЁІЇЄҐ][a-zäöüßśćżźńłа-яёіїєґ\u0301\-]{3,22})/gi;
+                // 2. Конструкции вида "до 1868 года — Эдо", "до 1921 года носил название Александровск", "formerly known as York", "dawniej Dirschau"
+                const untilYearRegex = /(?:до\s+\d{4}(?:\s*[-—]\s*\d{4})?\s*(?:года|годов|р\.|року|r\.)?|ранее|бывш[а-я\.]*|dawniej|formerly(?:\s+known\s+as|\s+called)?|historically(?:\s+known\s+as)?)(?:\s+носил[ао]?\s+название|\s+называл[ао]?сь|\s+назывался|\s+именовался|\s+город)?\s*[—\-:]?\s*([A-ZÀ-ɏА-ЯЁІЇЄҐ][a-zÀ-ɏа-яёіїєґ́\-]{2,24})/gi;
                 let mUntil;
                 while ((mUntil = untilYearRegex.exec(intro)) !== null) {
-                    const cleanW = mUntil[1].replace(/\u0301/g, '').trim();
+                    const cleanW = mUntil[1].replace(/́/g, '').trim();
                     if (isValidHistoricalToponym(cleanW)) {
                         found.add(cleanW);
                         const latTr = translitCyrToLat(cleanW);
@@ -940,11 +1780,11 @@
                     }
                 }
 
-                // 3. Явные языковые маркеры: (нем. Danzig, укр. Олександрівськ, пол. ..., лат. ...)
-                const markerRegex = /(?:нем\.|niem\.|нем:|ger\.|german:?|dawniej|formerly|hist\.|кашуб\.|kaszb\.|латин\.|лат\.|пол\.|укр\.)\s*[:\-—]?\s*([A-ZÄÖÜŚĆŻŹŁА-ЯЁІЇЄҐ][a-zäöüßśćżźńłа-яёіїєґ\u0301\-]{2,22})/gi;
+                // 3. Явные языковые маркеры: (нем. Dirschau, кашуб. Sopòt, лат. Gedanum) — с поддержкой всех символов À-ɏ, чтобы Sopòt НЕ обрезался в Sop!
+                const markerRegex = /(?:нем\.|niem\.|нем:|ger\.|german:?|dawniej|formerly|hist\.|кашуб\.|kaszb\.|латин\.|лат\.|пол\.|укр\.|фр\.|англ\.)\s*[:\-—]?\s*([A-ZÀ-ɏА-ЯЁІЇЄҐ][a-zÀ-ɏа-яёіїєґ́\-]{2,24})/gi;
                 let m;
                 while ((m = markerRegex.exec(intro)) !== null) {
-                    const candidate = m[1].replace(/\u0301/g, '').trim();
+                    const candidate = m[1].replace(/́/g, '').trim();
                     if (isValidHistoricalToponym(candidate)) {
                         found.add(candidate);
                         const latTr = translitCyrToLat(candidate);
@@ -952,20 +1792,73 @@
                     }
                 }
 
-                // 4. Латинские топонимы в скобках первого предложения: "Łęgowo (niem. Langenau)"
-                const firstSentence = intro.split('. ')[0] || '';
-                const parenMatch = firstSentence.match(/\(([^)]{3,160})\)/);
+                // 4. Латинские топонимы в скобках первого предложения (игнорируем фонетическую транскрипцию МФА в квадратных скобках [...])
+                const firstSentence = intro.replace(/\[[^\]]*\]/g, ' ').split('. ')[0] || '';
+                const parenMatch = firstSentence.match(/\(([^)]{3,180})\)/);
                 if (parenMatch) {
-                    const latinWords = parenMatch[1].match(/[A-ZÄÖÜŚĆŻŹŁ][a-zäöüßśćżźńł\-]{3,20}/g) || [];
+                    const latinWords = parenMatch[1].match(/[A-ZÀ-ɏ][a-zÀ-ɏ\-]{3,22}/g) || [];
                     latinWords.forEach(w => {
                         if (isValidHistoricalToponym(w)) found.add(w);
                     });
                 }
             }
 
-            return Array.from(found).slice(0, 7);
+            return Array.from(found).slice(0, 8);
         }
 
+        // АВТОМАТИЧЕСКИЙ ГЛОБАЛЬНЫЙ СБОРЩИК ИСТОРИЧЕСКИХ ИМЁН ИЗ WIKIPEDIA REDIRECTS & WIKIDATA ALIASES (работает для любого города Земли!)
+        async function fetchGlobalHistoricalAliases(title, sourceLang) {
+            const extraNames = new Set();
+            const targetTitle = title || currentPlaceIntlCity || currentPlaceLocalName;
+            if (!targetTitle) return [];
+
+            try {
+                // Запрашиваем из английской/немецкой/польской или текущей Википедии редиректы (rdlimit=25) и ID элемента Wikidata (wikibase_item)
+                const queryLang = sourceLang || 'en';
+                const apiUrl = `https://${queryLang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(targetTitle)}&prop=redirects|pageprops&rdlimit=25&redirects=1`;
+                const data = await fetchWikimediaJsonp(apiUrl);
+                if (data && data.query && data.query.pages) {
+                    const page = Object.values(data.query.pages)[0];
+                    if (page && page.redirects) {
+                        page.redirects.forEach(r => {
+                            const rTitle = (r.title || '').replace(/\s*\([^)]*\)/g, '').trim();
+                            // Берём только чистые одно-двухсловные названия без служебных слов (History of..., Map of..., List of...)
+                            if (rTitle && /^[A-ZÀ-ɏА-ЯЁІЇЄҐ][a-zÀ-ɏа-яёіїєґ\-\s]{2,22}$/.test(rTitle) && !/(history|timeline|city|district|province|station|airport|university|gmina|powiat|kommune|rayon|область|район|история|вокзал)/i.test(rTitle)) {
+                                if (isValidHistoricalToponym(rTitle)) {
+                                    extraNames.add(rTitle);
+                                    const tr = translitCyrToLat(rTitle);
+                                    if (tr && isValidHistoricalToponym(tr)) extraNames.add(tr);
+                                }
+                            }
+                        });
+                    }
+                    // Если есть wikibase_item (например Q64), быстро забираем старые/альтернативные латинские имена из Wikidata
+                    const qid = page && page.pageprops && page.pageprops.wikibase_item;
+                    if (qid) {
+                        const wdData = await fetchWikimediaJsonp(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=aliases|labels&languages=en|de|pl|fr`);
+                        if (wdData && wdData.entities && wdData.entities[qid]) {
+                            const ent = wdData.entities[qid];
+                            ['en', 'de', 'pl', 'fr'].forEach(l => {
+                                if (ent.labels && ent.labels[l] && ent.labels[l].value) {
+                                    const val = ent.labels[l].value.replace(/\s*\([^)]*\)/g, '').trim();
+                                    if (isValidHistoricalToponym(val) && /^[A-Za-zÀ-ɏ\-\s]{3,22}$/.test(val)) extraNames.add(val);
+                                }
+                                if (ent.aliases && ent.aliases[l]) {
+                                    ent.aliases[l].forEach(al => {
+                                        const val = (al.value || '').replace(/\s*\([^)]*\)/g, '').trim();
+                                        if (isValidHistoricalToponym(val) && /^[A-Za-zÀ-ɏ\-\s]{3,22}$/.test(val) && !/(city|municipality|capital|province|county)/i.test(val)) {
+                                            extraNames.add(val);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
+                }
+            } catch (e) {}
+
+            return Array.from(extraNames).slice(0, 6);
+        }
         function extractHistoricalSectionText(fullText, fallbackIntro) {
             if (!fullText) return fallbackIntro || '';
             const firstPara = fullText.split('\n').filter(p => p.trim().length > 35)[0] || fallbackIntro || '';
@@ -984,6 +1877,10 @@
 
         async function exploreWorldPoint(lat, lon, explicitName = null) {
             const reqId = ++currentRequestId;
+            explorerState.visitedPlacesCount = (explorerState.visitedPlacesCount || 0) + 1;
+            if (explorerState.visitedPlacesCount > 1) {
+                completeQuest('q_search');
+            }
             currentCoords = [lat, lon];
             if (modernMap) {
                 modernMarker.setLatLng(currentCoords);
@@ -1027,20 +1924,40 @@
             await updateGlobalPassportAndMaps(reqId);
         }
 
-        // ПАРСЕР ИСТОРИЧЕСКОГО ГОДА (проверяет Title, DateTimeOriginal, DateTime, Categories, ImageDescription, ObjectName)
+        // Очистка строки от разрешений картинок (1920x1080, 1280px), размеров (1500 dpi) и архивных кодов (btv1b53192168d), чтобы не спутать их с годом!
+        function stripFalseYearNumbers(str) {
+            if (!str) return '';
+            return str
+                .replace(/\b\d{3,5}\s*[x×*\-]\s*\d{3,5}\b/gi, ' ')
+                .replace(/\b\d{3,5}\s*(?:px|pixels|dpi|kb|mb|мм|см|м|km)\b/gi, ' ')
+                .replace(/\bbtv1b\w+\b/gi, ' ')
+                .replace(/\b(?:ул\.|улица|дом|д\.|кв\.|nr|no\.|стр\.|page|p\.|табл\.|fig\.)\s*\d+/gi, ' ');
+        }
+
+        // ПАРСЕР ИСТОРИЧЕСКОГО ГОДА (проверяет Title, DateTimeOriginal, Categories, ImageDescription, ObjectName — НЕ берет дату загрузки файла DateTime!)
         function extractStrictHistoricalYear(titleStr, extMeta) {
-            let combined = titleStr || '';
+            const cleanTitleStr = stripFalseYearNumbers(titleStr || '');
+            let combined = cleanTitleStr;
             if (extMeta) {
-                ['DateTimeOriginal', 'DateTime', 'ObjectName', 'Categories', 'ImageDescription'].forEach(field => {
+                ['DateTimeOriginal', 'ObjectName', 'Categories', 'ImageDescription'].forEach(field => {
                     if (extMeta[field] && extMeta[field].value) {
-                        combined += ' ' + String(extMeta[field].value).replace(/<[^>]+>/g, ' ').slice(0, 400);
+                        const rawVal = String(extMeta[field].value).replace(/<[^>]+>/g, ' ').slice(0, 400);
+                        combined += ' ' + stripFalseYearNumbers(rawVal);
                     }
                 });
             }
 
+            // Если в DateTimeOriginal явно стоит современная дата съемки (например "2018-07-15 14:22" у фото дома на Сахалине) — сразу отбрасываем!
+            if (extMeta && extMeta.DateTimeOriginal && extMeta.DateTimeOriginal.value) {
+                const dto = String(extMeta.DateTimeOriginal.value).replace(/<[^>]+>/g, '').trim();
+                if (/^(19[5-9]\d|20[0-2]\d)[-:\/]\d{2}[-:\/]\d{2}/.test(dto) && !/\b(1[0-8]\d{2}|19[0-3]\d|194[0-5])\b/.test(cleanTitleStr)) {
+                    return null;
+                }
+            }
+
             // Отсекаем файлы, где в самом названии явно указан современный год (1946–2029) и нет старого года
-            const titleModernYears = (titleStr || '').match(/\b(19[4-9]\d|20[0-2]\d)\b/g);
-            const titleHistYears = (titleStr || '').match(/\b(1[0-8]\d{2}|19[0-3]\d|194[0-5])\b/g);
+            const titleModernYears = cleanTitleStr.match(/\b(19[4-9]\d|20[0-2]\d)\b/g);
+            const titleHistYears = cleanTitleStr.match(/\b(1[0-8]\d{2}|19[0-3]\d|194[0-5])\b/g);
             if (titleModernYears && !titleHistYears) {
                 return null;
             }
@@ -1076,7 +1993,7 @@
             }
 
             // 4. Известные исторические картографы и атласы (если год не написан цифрой, но указан автор XVI–XIX вв.)
-            if (/\b(Merian|Blaeu|Ortelius|Mercator|Homann|Seutter|Lotter|Speed|Münster|Schedel|Waghenaer|Hondius|Janssonius)\b/i.test(combined)) {
+            if (/\b(Merian|Blaeu|Ortelius|Mercator|Homann|Seutter|Lotter|Speed|Münster|Schedel|Waghenaer|Hondius|Janssonius|Lubinus)\b/i.test(combined)) {
                 return 1650;
             }
             if (/\b(Meyers|Brockhaus|Baedeker|Reymann|Messtischblatt|Шуберт|Стрельбицкий|Трёхверстовка)\b/i.test(combined)) {
@@ -1099,28 +2016,23 @@
             return false;
         }
 
-        // ИСПРАВЛЕННЫЙ ПОИСК СТАТЬИ О НАСЕЛЁННОМ ПУНКТЕ (Никогда не берет Консерваторию вместо Киева!)
+        // ИСПРАВЛЕННЫЙ ПОИСК СТАТЬИ О НАСЕЛЁННОМ ПУНКТЕ (Сначала проверяет выбранный язык интерфейса wikiLang в радиусе 10 км и по прямому названию, чтобы не перескакивать на английский!)
         async function fetchBestCityArticle(wikiLang, lat, lon) {
             const langPriority = Array.from(new Set([
                 wikiLang,
                 currentPlaceIntlCountry === 'Poland' ? 'pl' : (currentPlaceIntlCountry === 'Ukraine' ? 'uk' : (currentPlaceIntlCountry === 'Germany' ? 'de' : 'en')),
-                'pl', 'uk', 'ru', 'de', 'en'
+                'ru', 'uk', 'pl', 'de', 'en'
             ]));
 
             const targetNames = [currentPlaceLocalName, currentPlaceIntlCity]
                 .filter(Boolean)
                 .map(n => n.toLowerCase().replace(/\s*\([^)]*\)/g, '').trim());
 
-            // Шаг 1: Сначала ищем точное совпадение названия населённого пункта в geosearch (радиус 5 км)
-            // Для малых сёл ("Łęgowo (powiat gdański)") это сразу находит точный географический pageid именно этого села!
-            // Для крупных городов ("Киев", "Гданьск") это игнорирует "Киевскую консерваторию" и берет только сам город!
+            // Шаг 1: Сначала проверяем выбранный пользователем язык (wikiLang): сначала в geosearch (радиус 10000 м), затем по прямому названию (с защитой от Disambiguation)
             for (const lang of langPriority) {
                 try {
-                    const geoRes = await fetchWikimediaJsonp(`https://${lang}.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=5000&gslimit=15`);
+                    const geoRes = await fetchWikimediaJsonp(`https://${lang}.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=10000&gslimit=20`);
                     const items = (geoRes && geoRes.query && geoRes.query.geosearch) ? geoRes.query.geosearch : [];
-                    if (items.length === 0) continue;
-
-                    // Строгая проверка: название статьи без скобок должно совпадать с названием города/села!
                     const matchedGeo = items.find(it => {
                         const cleanIt = it.title.toLowerCase().replace(/\s*\([^)]*\)/g, '').trim();
                         return targetNames.some(tn => cleanIt === tn);
@@ -1132,6 +2044,27 @@
                             const page = pageData.query.pages[matchedGeo.pageid] || Object.values(pageData.query.pages)[0];
                             if (page && page.extract && page.extract.length > 70 && !isDisambiguationPage(page, page.extract)) {
                                 return { text: page.extract, sourceLang: lang, title: page.title };
+                            }
+                        }
+                    }
+
+                    // Если точка центра крупного города (напр. Запорожье) чуть смещена, проверяем прямую статью на этом же языке (если это не Disambiguation!)
+                    const directTitle = lang === wikiLang ? currentPlaceLocalName : (currentPlaceIntlCity || currentPlaceLocalName);
+                    if (directTitle) {
+                        const directData = await fetchWikimediaJsonp(`https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(directTitle)}&prop=extracts|pageprops|coordinates&explaintext=1&redirects=1`);
+                        if (directData && directData.query && directData.query.pages) {
+                            const page = Object.values(directData.query.pages)[0];
+                            if (page && page.extract && page.extract.length > 90 && !isDisambiguationPage(page, page.extract)) {
+                                // Проверяем координаты статьи, если они есть, чтобы не взять село-тёзку в 500 км
+                                if (page.coordinates && page.coordinates[0]) {
+                                    const dLat = Math.abs(page.coordinates[0].lat - lat);
+                                    const dLon = Math.abs(page.coordinates[0].lon - lon);
+                                    if (dLat < 0.35 && dLon < 0.35) {
+                                        return { text: page.extract, sourceLang: lang, title: page.title };
+                                    }
+                                } else {
+                                    return { text: page.extract, sourceLang: lang, title: page.title };
+                                }
                             }
                         }
                     }
@@ -1198,7 +2131,8 @@
             currentPinsList = [];
             geoList.slice(0, 8).forEach((item, idx) => {
                 const pType = idx < 2 ? 'fact' : (idx < 5 ? 'hypo' : 'myth');
-                const sym = pType === 'fact' ? '🟢' : (pType === 'hypo' ? '🟡' : '🔴');
+                const syms = getPinSymbolsSet();
+                const sym = syms[pType] || '🟢';
                 const cleanTitleNoParen = item.title.replace(/\s*\([^)]*\)/g, '').trim();
                 const shortWords = cleanTitleNoParen.split(/[\s,]+/).slice(0, 2).join(' ');
                 currentPinsList.push({
@@ -1237,9 +2171,15 @@
             const mainCityFullText = cityArticleObj.text;
 
             extractedHistoricalNames = extractOldNamesFromWikiText(mainCityFullText);
+            const wikiExtraAliases = await fetchGlobalHistoricalAliases(cityArticleObj.title, cityArticleObj.sourceLang);
+            if (reqId !== currentRequestId) return;
+            wikiExtraAliases.forEach(al => {
+                if (!extractedHistoricalNames.includes(al)) extractedHistoricalNames.push(al);
+            });
             if (currentPlaceIntlCity && isValidHistoricalToponym(currentPlaceIntlCity) && !extractedHistoricalNames.includes(currentPlaceIntlCity)) {
                 extractedHistoricalNames.unshift(currentPlaceIntlCity);
             }
+            extractedHistoricalNames = extractedHistoricalNames.slice(0, 9);
 
             const OrderedExtracts = geoList.slice(0, 6).map(g => {
                 const p = articlesMap[g.pageid];
@@ -1308,19 +2248,59 @@
             await fetchAllHistoricalMapsWithYears(reqId);
         }
 
-        // ЖЁСТКИЙ JS-ФИЛЬТР КАРТ WIKIMEDIA COMMONS (отсекает фото зданий, ЛЭП, фонтанов, гербов и современные схемы 1946–2026)
-        const COMMONS_GARBAGE_REGEX = /flag|coat_of_arms|herb|wappen|logo|locator|location_map|outline_map|blank_map|symbol|stamp|coin|banknote|medal|portrait|photo|photograph|demography|election|census|population|building|church|kirche|kościół|cathedral|chapel|synagogue|mosque|station|bahnhof|dworzec|fountain|brunnen|fontanna|power|transmission|pylon|mast|tower|turm|wieża|street|ulica|straße|aerial|drone|satellite|modern|battle_of|offensive|frontline|military_situation|201\d|202\d|19[5-9]\d|view_of|panorama|monument|statue|memorial|pomnik|denkmal|bridge|most|brücke|cemetery|friedhof|cmentarz|palace|pałac|schloss|castle_ruin|train|tram|bus|park|garden|painting|grave|tomb|plaque|inscription|seal|banner|diagram|graph|chart_of|municipality_map|powiat_locator|gmina_locator|administrative|subdivisions|districts_of|raions_of/i;
+        // ЖЁСТКИЙ JS-ФИЛЬТР КАРТ WIKIMEDIA COMMONS v2.5:
+        // Отсекает:
+        // 1) Архитектурные поэтажные планы театров/зданий (floor plan, ground floor, seating plan, theatre, interior)
+        // 2) Французские/музыкальные учебники и ноты (chanteur, chant, baryton, soprano, mezzo, partition, musique, sur un plan nouveau)
+        // 3) Многостраничные книги вида (023 of 228)
+        // 4) Фото домов, улиц, костёлов, вокзалов, ЛЭП, фонтанов, Сахалин, нарезки рамок (detail 1/2/3) и пустые обороты листов ((2 of 2), verso)
+        const COMMONS_GARBAGE_REGEX = /flag|coat_of_arms|herb|wappen|logo|locator|location_map|outline_map|blank_map|symbol|stamp|coin|banknote|medal|portrait|photo|photograph|demography|election|census|population|building|church|kirche|kościół|cathedral|chapel|synagogue|mosque|station|bahnhof|dworzec|fountain|brunnen|fontanna|power|transmission|pylon|mast|tower|turm|wieża|street|ulica|straße|улица|ул\.|дом_|здание|aerial|drone|satellite|modern|battle_of|offensive|frontline|military_situation|201\d|202\d|19[5-9]\d|view_of|panorama|monument|statue|memorial|pomnik|denkmal|bridge|most|brücke|cemetery|friedhof|cmentarz|palace|pałac|schloss|castle_ruin|train|tram|bus|park|garden|painting|grave|tomb|plaque|inscription|seal|banner|diagram|graph|chart_of|municipality_map|powiat_locator|gmina_locator|administrative|subdivisions|districts_of|raions_of|сахалин|sakhalin|грушевск|музей|экспонат|\bdetail\b|detail_\d|\bfragment\b|\bcartouche\b|\bvignette\b|\bborder\b|\bverso\b|back_side|\(2_of_2\)|\(2 of 2\)|\(3 of 3\)|floor_plan|floor plan|ground_floor|ground floor|first_floor|first floor|second_floor|seating_plan|seating plan|architectural_plan|building_plan|theatre|theater|lyceum|interior|elevation|cross_section|поэтажный|план_этажа|план_здания|chanteur|méthode_de_chant|methode_de_chant|plan_nouveau|plan nouveau|baryton|soprano|mezzo|partition|musique|sonate|symphonie/i;
 
-        const POSITIVE_MAP_TITLE_REGEX = /(map|maps|plan|plans|karte|karten|stadtplan|mapa|mapy|atlas|tabula|chart|topograph|messtischblatt|kreiskarte|спецкарта|карта|карты|план|планы|атлас|чертеж|чертёж)/i;
+        // Регулярка для отсечения многостраничных сканов книг вида "(023 of 228)" или "(15 of 340)"
+        function isMultiPageBookScan(titleStr) {
+            const m = (titleStr || '').match(/\(\s*(\d{1,4})\s+of\s+(\d{1,4})\s*\)/i);
+            if (!m) return false;
+            const pageNum = parseInt(m[1], 10);
+            const totalPages = parseInt(m[2], 10);
+            // Если в документе больше 4 страниц (книга/учебник) или это 2-я и далее страница — отсекаем!
+            return totalPages > 4 || pageNum >= 2;
+        }
 
-        // Простые и 100% совместимые с CirrusSearch запросы к gsrnamespace=6, а вся жёсткая фильтрация выполняется в JS
-        async function runCommonsBatchQueries(rawSearchTerms, seenUrls, scaleTag) {
+        // Проверка на конфликт чужих стран/регионов (чтобы в Торонто не попадала "Карта Балкан", а в польский Сопот — "Карта Србије")
+        function hasForeignRegionConflict(titleAndDesc) {
+            const country = (currentPlaceIntlCountry || '').toLowerCase();
+            if (country === 'poland' && /\b(србије|србија|serbia|сербия|сербии|българия|bulgaria|болгария)\b/i.test(titleAndDesc)) {
+                return true;
+            }
+            if (country === 'canada' && /\b(балкан|balkans|balkan|bulgaria|serbia|greece|ottoman|europe|россия|украина)\b/i.test(titleAndDesc)) {
+                return true;
+            }
+            return false;
+        }
+
+        // Нормализация названия карты для защиты от дублей (чтобы "Plan of Toronto (I0029237)" и "Plan of Toronto - 1788 (I0029237)" не двоились и не четверились!)
+        function normalizeMapTitleKey(rawTitle, year) {
+            const cleaned = (rawTitle || '')
+                .toLowerCase()
+                .replace(/\([a-z0-9_\-]{4,16}\)/gi, '') // убираем архивные коды вроде (I0029237) или (btv1b...)
+                .replace(/\b(1[0-9]{3})\b/g, '')          // убираем год из ключа
+                .replace(/[^a-zÀ-ɏа-яёіїєґ0-9]+/gi, ' ')
+                .trim();
+            return `${year}_${cleaned.slice(0, 55)}`;
+        }
+
+        const POSITIVE_MAP_TITLE_REGEX = /(map|maps|plan|plans|karte|karten|stadtplan|mapa|mapy|atlas|tabula|chart|topograph|messtischblatt|kreiskarte|спецкарта|карта|карты|план|планы|атлас|чертеж|чертёж|мапа)/i;
+
+        // Запрос карт из Wikimedia Commons в высоком разрешении (iiurlwidth=2560 — 2.5K!) со строгой проверкой привязки к локации
+        async function runCommonsBatchQueries(rawSearchTerms, seenUrls, seenTitleKeys, scaleTag, requiredNamesList) {
             const datedFound = [];
             const undatedBackup = [];
 
+            const reqLower = (requiredNamesList || []).map(n => n.toLowerCase().trim()).filter(n => n.length >= 3);
+
             const promises = rawSearchTerms.map(term => {
                 const fullSearch = `filetype:bitmap ${term}`;
-                const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(fullSearch)}&gsrlimit=15&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=1280`;
+                const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(fullSearch)}&gsrlimit=18&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=2560`;
                 return fetchWikimediaJsonp(apiUrl);
             });
 
@@ -1335,25 +2315,46 @@
                     const cleanTitle = (p.title || '').replace(/^File:/i, '').replace(/\.(jpg|jpeg|png|svg|tif|tiff|gif)$/i, '');
 
                     if (!imgUrl || seenUrls.has(imgUrl)) return;
+                    if (isMultiPageBookScan(cleanTitle)) return;
 
                     const catVal = (info.extmetadata && info.extmetadata.Categories && info.extmetadata.Categories.value)
                         ? String(info.extmetadata.Categories.value)
+                        : '';
+                    const objVal = (info.extmetadata && info.extmetadata.ObjectName && info.extmetadata.ObjectName.value)
+                        ? String(info.extmetadata.ObjectName.value)
                         : '';
                     const descVal = (info.extmetadata && info.extmetadata.ImageDescription && info.extmetadata.ImageDescription.value)
                         ? String(info.extmetadata.ImageDescription.value).replace(/<[^>]+>/g, ' ')
                         : '';
 
-                    // 1. В заголовке или категориях обязательно должно быть слово map/plan/karte/mapa/atlas/карта/план
-                    if (!POSITIVE_MAP_TITLE_REGEX.test(cleanTitle) && !POSITIVE_MAP_TITLE_REGEX.test(catVal)) return;
+                    const titleAndObj = `${cleanTitle} ${objVal}`;
 
-                    // 2. Жёсткий бан-лист против фото зданий, костёлов, ЛЭП, фонтанов, схем выборов и современных боёв
-                    if (COMMONS_GARBAGE_REGEX.test(cleanTitle)) return;
-                    if (/\b(201\d|202\d|Russian invasion|power line|fountain|church building|train station|modern map|locator map)\b/i.test(descVal + ' ' + catVal)) return;
+                    // 1. В САМОМ НАЗВАНИИ ФАЙЛА (или ObjectName) обязательно должно быть картографическое слово (map/plan/karte/mapa/atlas/карта/план/чертёж)
+                    if (!POSITIVE_MAP_TITLE_REGEX.test(titleAndObj)) return;
 
-                    // 3. Строгий парсинг реального исторического года <= 1945
+                    // 2. Жёсткий бан-лист против поэтажных планов театров (floor plan), французских нот (chanteur/baryton), нарезок (detail 1) и современных схем
+                    if (COMMONS_GARBAGE_REGEX.test(titleAndObj)) return;
+                    if (/\b(201\d|202\d|Russian invasion|power line|fountain|church building|train station|modern map|locator map|Сахалин|Sakhalin|floor plan|ground floor|méthode de chant|pour baryton)\b/i.test(descVal + ' ' + catVal)) return;
+
+                    // 3. Защита от чужих стран-тёзок (Сербский Сопот в Польше, Карта Балкан в Торонто)
+                    if (hasForeignRegionConflict(titleAndObj + ' ' + catVal)) return;
+
+                    // 4. КЛЮЧЕВАЯ ПРОВЕРКА ПРИВЯЗКИ К ГОРОДУ/РЕГИОНУ:
+                    // В самом названии файла (cleanTitle) или ObjectName ОБЯЗАНО встречаться хотя бы одно из искомых имён города/региона!
+                    // Это на 100% блокирует "Карта Балкан, 1925" в Торонто (где слово Toronto было только в описании библиотеки)!
+                    if (reqLower.length > 0) {
+                        const titleLow = titleAndObj.toLowerCase();
+                        const hasTargetNameInTitle = reqLower.some(reqName => titleLow.includes(reqName));
+                        if (!hasTargetNameInTitle) return;
+                    }
+
+                    // 5. Строгий парсинг реального исторического года <= 1945
                     const strictYear = extractStrictHistoricalYear(cleanTitle, info.extmetadata);
                     if (strictYear !== null && strictYear <= 1945) {
+                        const normKey = normalizeMapTitleKey(cleanTitle, strictYear);
+                        if (seenTitleKeys.has(normKey)) return; // Защита от 4 дублей Plan of Toronto 1788!
                         seenUrls.add(imgUrl);
+                        seenTitleKeys.add(normKey);
                         datedFound.push({
                             url: imgUrl,
                             origUrl: origUrl,
@@ -1362,9 +2363,11 @@
                             scaleTag: scaleTag
                         });
                     } else if (!/\b(19[4-9]\d|20[0-2]\d)\b/.test(cleanTitle + ' ' + catVal)) {
-                        // Если в файле явно есть Old maps / Historical maps в категориях, но точный год не распарсился — держим в резерве
                         if (/old maps|historical maps|maps of .* history|1[6-9]th-century maps/i.test(catVal + ' ' + cleanTitle)) {
+                            const normKey = normalizeMapTitleKey(cleanTitle, 1850);
+                            if (seenTitleKeys.has(normKey)) return;
                             seenUrls.add(imgUrl);
+                            seenTitleKeys.add(normKey);
                             undatedBackup.push({
                                 url: imgUrl,
                                 origUrl: origUrl,
@@ -1393,33 +2396,34 @@
             const localCity = (currentPlaceLocalName || '').replace(/\s*\([^)]*\)/g, '').trim();
             const county = currentPlaceIntlCounty || '';
             const state = currentPlaceIntlState || '';
+            const country = currentPlaceIntlCountry || '';
 
-            // Собираем ВСЕ уникальные исторические имена города (включая Danzig, Александровск, Aleksandrovsk, Kiev и т.д.)
             const allNames = Array.from(new Set([
                 city,
                 ...extractedHistoricalNames,
                 localCity
-            ].filter(n => n && n.length >= 3)));
+            ].filter(n => n && isValidHistoricalToponym(n))));
 
             const seenUrls = new Set();
+            const seenTitleKeys = new Set();
             let collectedScans = [];
             let backupUndated = [];
 
-            // СТУПЕНЬ 1 (Локальная): Формируем простые совместимые запросы по ВСЕМ историческим именам города/села
+            // СТУПЕНЬ 1 (Локальная): Ищем по всем современным и старым именам города (требуем имя города прямо в заголовке файла!)
             const tier1Queries = [];
             allNames.forEach(name => {
-                if (/^[A-Za-zÄÖÜäöüßŚĆŻŹŁŃśćżźłń\s\-]+$/.test(name)) {
-                    tier1Queries.push(`map ${name}`);
-                    tier1Queries.push(`plan ${name}`);
-                    tier1Queries.push(`karte ${name}`);
+                if (/^[A-Za-zÀ-ɏ\s\-]+$/.test(name)) {
+                    tier1Queries.push(`map "${name}"`);
+                    tier1Queries.push(`plan "${name}"`);
+                    tier1Queries.push(`karte "${name}"`);
                 } else {
-                    tier1Queries.push(`план ${name}`);
-                    tier1Queries.push(`карта ${name}`);
+                    tier1Queries.push(`план "${name}"`);
+                    tier1Queries.push(`карта "${name}"`);
                 }
             });
 
             if (tier1Queries.length > 0) {
-                const res1 = await runCommonsBatchQueries(tier1Queries.slice(0, 12), seenUrls, 'Локальная');
+                const res1 = await runCommonsBatchQueries(tier1Queries.slice(0, 15), seenUrls, seenTitleKeys, 'Локальная', allNames);
                 if (reqId !== currentRequestId) return;
                 collectedScans.push(...res1.datedFound);
                 backupUndated.push(...res1.undatedBackup);
@@ -1427,29 +2431,47 @@
 
             // СТУПЕНЬ 2 (Уезд / Повят и Исторический регион): если по самому населённому пункту нашлось меньше 5 датированных карт
             if (collectedScans.length < 5) {
+                const regNames = [county, state].filter(Boolean);
                 const tier2Queries = [
-                    county ? `map ${county}` : '',
-                    county ? `karte ${county}` : '',
-                    state ? `map ${state} 18th` : '',
-                    state ? `map ${state} 19th` : '',
-                    state ? `old map ${state}` : '',
-                    state ? `karte ${state}` : ''
+                    county ? `map "${county}"` : '',
+                    county ? `karte "${county}"` : '',
+                    state ? `map "${state}" 18th` : '',
+                    state ? `map "${state}" 19th` : '',
+                    state ? `old map "${state}"` : '',
+                    state ? `karte "${state}"` : ''
                 ].filter(Boolean);
 
                 if (tier2Queries.length > 0) {
-                    const res2 = await runCommonsBatchQueries(tier2Queries, seenUrls, 'Регион');
+                    const res2 = await runCommonsBatchQueries(tier2Queries, seenUrls, seenTitleKeys, 'Регион', regNames);
                     if (reqId !== currentRequestId) return;
                     collectedScans.push(...res2.datedFound);
                     backupUndated.push(...res2.undatedBackup);
                 }
             }
 
-            // Если точных датированных карт мало (< 2), дополняем проверенными архивными картами из резерва
+            // СТУПЕНЬ 3 (Глобальная: старые колониальные и исторические карты стран Азии, Африки, Америки и Европы)
+            if (collectedScans.length < 4 && country) {
+                const colonialNames = HISTORICAL_COUNTRY_COLONIAL_DB[country] || [country];
+                const tier3Names = Array.from(new Set([...colonialNames, country]));
+                const tier3Queries = [];
+                tier3Names.slice(0, 4).forEach(cName => {
+                    tier3Queries.push(`old map "${cName}"`);
+                    tier3Queries.push(`historical map "${cName}"`);
+                    tier3Queries.push(`map "${cName}" 19th`);
+                });
+
+                if (tier3Queries.length > 0) {
+                    const res3 = await runCommonsBatchQueries(tier3Queries.slice(0, 10), seenUrls, seenTitleKeys, 'Страна/Колония', tier3Names);
+                    if (reqId !== currentRequestId) return;
+                    collectedScans.push(...res3.datedFound);
+                    backupUndated.push(...res3.undatedBackup);
+                }
+            }
+
             if (collectedScans.length < 2 && backupUndated.length > 0) {
                 collectedScans.push(...backupUndated.slice(0, 6));
             }
 
-            // Сортируем строго по историческому году
             collectedScans.sort((a, b) => a.year - b.year);
             currentArchiveScans = collectedScans;
             loader.classList.remove('visible');
@@ -1471,11 +2493,22 @@
             }
         }
 
+        // Прокрутка золотой шкалы годов кнопками ‹ › и колесом мыши
+        function scrollMilestonesBar(deltaPx) {
+            const bar = document.getElementById('goldMilestonesBar');
+            if (bar) bar.scrollBy({ left: deltaPx, behavior: 'smooth' });
+        }
+
+        // Группировка дублирующихся годов на золотой шкале (например, "🔸 1650 г. (×2)" вместо 4 одинаковых кнопок подряд!)
+        // При повторном клике на кнопку с (×N) она циклически переключает все карты этого года!
+        let yearGroupsList = [];
+
         function renderGoldMilestonesUI() {
             const bar = document.getElementById('goldMilestonesBar');
             const ticksLayer = document.getElementById('tickMarksLayer');
-            bar.innerHTML = `<span class="milestones-title">🔸 Карты (≤1945):</span>`;
+            bar.innerHTML = `<span class="milestones-title">🔸 Карты (${currentArchiveScans.length}):</span>`;
             ticksLayer.innerHTML = ``;
+            yearGroupsList = [];
 
             if (currentArchiveScans.length === 0) {
                 const emptySpan = document.createElement('span');
@@ -1486,15 +2519,40 @@
                 return;
             }
 
+            // Группируем карты с одинаковым годом, чтобы на шкале помещался весь диапазон от средних веков до 1945 г.
+            const byYear = new Map();
             currentArchiveScans.forEach((scan, idx) => {
+                const key = `${scan.isApproxEpoch ? '~' : ''}${scan.year}`;
+                if (!byYear.has(key)) {
+                    byYear.set(key, { year: scan.year, isApprox: !!scan.isApproxEpoch, indices: [], titles: [] });
+                }
+                const grp = byYear.get(key);
+                grp.indices.push(idx);
+                grp.titles.push(`[${scan.scaleTag}] ${scan.title}`);
+            });
+
+            yearGroupsList = Array.from(byYear.values());
+
+            yearGroupsList.forEach((grp) => {
                 const chip = document.createElement('button');
-                chip.className = 'gold-chip' + (idx === currentScanIdx ? ' active' : '');
-                const yearLabel = scan.isApproxEpoch ? `~${scan.year} г.` : `${scan.year} г.`;
-                chip.innerText = `🔸 ${yearLabel}`;
-                chip.title = `[${scan.scaleTag}] ${scan.title}`;
+                const isGroupActive = grp.indices.includes(currentScanIdx);
+                chip.className = 'gold-chip' + (isGroupActive ? ' active' : '');
+                chip.dataset.indices = grp.indices.join(',');
+
+                const yPrefix = grp.isApprox ? `~${grp.year}` : `${grp.year}`;
+                const countSuffix = grp.indices.length > 1 ? ` (×${grp.indices.length})` : '';
+                chip.innerText = `🔸 ${yPrefix} г.${countSuffix}`;
+                chip.title = grp.titles.join('\n');
+
                 chip.onclick = () => {
-                    currentScanIdx = idx;
-                    selectedYear = scan.year;
+                    // Если мы уже внутри этого года и карт несколько — переключаем на следующую карту этого же года!
+                    const posInGrp = grp.indices.indexOf(currentScanIdx);
+                    if (posInGrp !== -1 && grp.indices.length > 1) {
+                        currentScanIdx = grp.indices[(posInGrp + 1) % grp.indices.length];
+                    } else {
+                        currentScanIdx = grp.indices[0];
+                    }
+                    selectedYear = currentArchiveScans[currentScanIdx].year;
                     document.getElementById('timeSlider').value = Math.min(Math.max(100, selectedYear), 1950);
                     document.getElementById('customYearInput').value = selectedYear;
                     showCurrentGalleryScan(0);
@@ -1502,7 +2560,7 @@
                 };
                 bar.appendChild(chip);
 
-                const pct = ((Math.min(Math.max(100, scan.year), 1950) - 100) / (1950 - 100)) * 100;
+                const pct = ((Math.min(Math.max(100, grp.year), 1950) - 100) / (1950 - 100)) * 100;
                 const tick = document.createElement('div');
                 tick.className = 'gold-tick';
                 tick.style.left = `${pct}%`;
@@ -1512,8 +2570,27 @@
 
         function highlightActiveGoldChip() {
             const chips = document.querySelectorAll('.gold-chip');
-            chips.forEach((c, idx) => c.classList.toggle('active', idx === currentScanIdx));
+            let activeChipEl = null;
+            chips.forEach((c) => {
+                const indices = (c.dataset.indices || '').split(',').map(x => parseInt(x, 10));
+                const isAct = indices.includes(currentScanIdx);
+                c.classList.toggle('active', isAct);
+                if (isAct) activeChipEl = c;
+            });
+            if (activeChipEl && activeChipEl.scrollIntoView) {
+                try {
+                    activeChipEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                } catch(e) {}
+            }
         }
+
+        // Поддержка горизонтальной прокрутки полосы золотых годов обычным колесом мыши
+        document.getElementById('goldMilestonesBar').addEventListener('wheel', function(e) {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                this.scrollLeft += e.deltaY;
+            }
+        }, { passive: false });
 
         function snapToNearestMapByYear(targetYear) {
             if (currentArchiveScans.length === 0) return;
@@ -1560,6 +2637,9 @@
         function showCurrentGalleryScan(yearDiff = 0) {
             if (currentArchiveScans.length === 0) return;
             const item = currentArchiveScans[currentScanIdx];
+            if (item && item.year < 1800 && explorerState.visitedPlacesCount >= 1) {
+                completeQuest('q_ancient');
+            }
             const scanImg = document.getElementById('archiveScanImg');
             const galInfo = document.getElementById('galInfoText');
             const loader = document.getElementById('scanLoadingBadge');
@@ -1573,6 +2653,9 @@
             scanImg.onerror = () => {
                 loader.classList.remove('visible');
             };
+            isUltraHdActive = false;
+            const hdBtn = document.getElementById('hdToggleBtn');
+            if (hdBtn) { hdBtn.style.background = '#333'; hdBtn.style.color = '#ffd700'; hdBtn.innerText = '✨ HD'; }
             scanImg.src = item.url;
             const scaleBadge = item.scaleTag ? `[${item.scaleTag}] ` : '';
             const yText = item.isApproxEpoch ? `~${item.year} г.` : `${item.year} г.`;
@@ -1630,6 +2713,7 @@
         }
 
         function flyToMarkerType(type) {
+            completeQuest('q_passport');
             if (window.innerWidth <= 950) {
                 switchMobilePane('historicPane', document.getElementById('mobBtnHist'));
             }
@@ -1653,6 +2737,7 @@
 
         function setRightMode(mode) {
             rightMode = mode;
+            updateContextTipBanner();
             const scanLayer = document.getElementById('scanLayer');
             const galBar = document.getElementById('scanGalleryBar');
             const subOverlay = document.getElementById('overlaySubControls');
@@ -1709,6 +2794,7 @@
         const historicPaneEl = document.getElementById('historicPane');
 
         function updateSwipeClip(pct) {
+            if (isDraggingSwipe) completeQuest('q_swipe');
             swipePercent = Math.min(Math.max(5, pct), 95);
             swipeHandleEl.style.left = swipePercent + '%';
             const scanLayer = document.getElementById('scanLayer');
@@ -1770,6 +2856,9 @@
 
         function setRotationAngle(val) {
             rotationAngle = parseFloat(val) || 0;
+            if (rightMode === 'overlay' && Math.abs(rotationAngle) > 2) {
+                completeQuest('q_overlay_rot');
+            }
             applyScanTransform();
         }
 
@@ -1784,8 +2873,64 @@
             applyScanTransform();
         }
 
+        let isUltraHdActive = false;
+
+        function maybeUpgradeScanToOriginalHd() {
+            if (currentArchiveScans.length === 0 || !currentArchiveScans[currentScanIdx]) return;
+            const item = currentArchiveScans[currentScanIdx];
+            const scanImg = document.getElementById('archiveScanImg');
+            const hdBtn = document.getElementById('hdToggleBtn');
+            if (!scanImg || !item.origUrl) return;
+            // Проверяем, поддерживает ли браузер прямое отображение origUrl (jpg/jpeg/png/gif/webp)
+            const isBrowserNativeImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(item.origUrl);
+            if (isBrowserNativeImg && scanImg.src !== item.origUrl) {
+                scanImg.src = item.origUrl;
+                isUltraHdActive = true;
+                if (hdBtn) {
+                    hdBtn.style.background = '#d4af37';
+                    hdBtn.style.color = '#111';
+                    hdBtn.innerText = '✨ 4K ВКЛ';
+                }
+            }
+        }
+
+        function toggleUltraHdScan() {
+            if (currentArchiveScans.length === 0 || !currentArchiveScans[currentScanIdx]) return;
+            const item = currentArchiveScans[currentScanIdx];
+            const scanImg = document.getElementById('archiveScanImg');
+            const hdBtn = document.getElementById('hdToggleBtn');
+            const loader = document.getElementById('scanLoadingBadge');
+            if (!scanImg) return;
+
+            if (!isUltraHdActive && item.origUrl && /\.(jpg|jpeg|png|gif|webp)$/i.test(item.origUrl)) {
+                loader.classList.add('visible');
+                scanImg.src = item.origUrl;
+                isUltraHdActive = true;
+                if (hdBtn) {
+                    hdBtn.style.background = '#d4af37';
+                    hdBtn.style.color = '#111';
+                    hdBtn.innerText = '✨ 4K ВКЛ';
+                }
+            } else {
+                isUltraHdActive = false;
+            const hdBtn = document.getElementById('hdToggleBtn');
+            if (hdBtn) { hdBtn.style.background = '#333'; hdBtn.style.color = '#ffd700'; hdBtn.innerText = '✨ HD'; }
+            scanImg.src = item.url;
+                isUltraHdActive = false;
+                if (hdBtn) {
+                    hdBtn.style.background = '#333';
+                    hdBtn.style.color = '#ffd700';
+                    hdBtn.innerText = '✨ HD';
+                }
+            }
+        }
+
         function zoomScan(delta) {
-            scanScale = Math.min(Math.max(0.35, scanScale + delta), 6);
+            scanScale = Math.min(Math.max(0.35, scanScale + delta), 8);
+            // При увеличении больше 1.7x автоматически подгружаем оригинальный полноразмерный скан высокой чёткости!
+            if (scanScale >= 1.7 && !isUltraHdActive) {
+                maybeUpgradeScanToOriginalHd();
+            }
             applyScanTransform();
         }
 
@@ -1854,7 +2999,7 @@
                 let newRot = initialRotationAngle + angleDiff;
                 while (newRot > 180) newRot -= 360;
                 while (newRot < -180) newRot += 360;
-                rotationAngle = Math.round(newRot);
+                rotationAngle = Math.round(newRot); if (rightMode === 'overlay' && Math.abs(rotationAngle) > 2) completeQuest('q_overlay_rot');
                 const sl = document.getElementById('rotAngleSlider');
                 if (sl) sl.value = rotationAngle;
                 applyScanTransform();
@@ -1873,9 +3018,48 @@
         });
 
         // v2.1: Управление окном приветствия и защита авторства (Domain Lock & Скрытие кнопки скачивания для гостей)
-        function openWelcomeModal() {
+        function openWelcomeModal(defaultTab = 'guide') {
+            renderDiaryModalContents();
+            if (explorerState.strictMode && (defaultTab === 'quests' || defaultTab === 'shop')) {
+                defaultTab = 'guide';
+            }
+            switchDiaryTab(defaultTab);
             document.getElementById('welcomeModalBackdrop').classList.add('open');
         }
+
+        // Обработчик движения Лупы Архивариуса (2.5x) по скану
+        function updateLoupePosition(clientX, clientY) {
+            const loupe = document.getElementById('archivistLoupe');
+            const scanImg = document.getElementById('archiveScanImg');
+            const scanLayer = document.getElementById('scanLayer');
+            if (!loupe || !scanImg || !explorerState.loupeEnabled || rightMode === 'map' || !scanImg.classList.contains('loaded')) {
+                if (loupe) loupe.classList.remove('active');
+                return;
+            }
+            const imgRect = scanImg.getBoundingClientRect();
+            const layerRect = scanLayer.getBoundingClientRect();
+            if (clientX < imgRect.left || clientX > imgRect.right || clientY < imgRect.top || clientY > imgRect.bottom) {
+                loupe.classList.remove('active');
+                return;
+            }
+            loupe.classList.add('active');
+            const relX = (clientX - imgRect.left) / imgRect.width;
+            const relY = (clientY - imgRect.top) / imgRect.height;
+            const zoomFactor = 2.5;
+            loupe.style.left = `${clientX - layerRect.left - 72}px`;
+            loupe.style.top = `${clientY - layerRect.top - 72}px`;
+            loupe.style.backgroundImage = `url('${scanImg.src}')`;
+            loupe.style.backgroundSize = `${imgRect.width * zoomFactor}px ${imgRect.height * zoomFactor}px`;
+            loupe.style.backgroundPosition = `${Math.min(100, Math.max(0, relX * 100))}% ${Math.min(100, Math.max(0, relY * 100))}%`;
+        }
+
+        document.getElementById('historicPane').addEventListener('mousemove', (e) => {
+            if (explorerState.loupeEnabled) updateLoupePosition(e.clientX, e.clientY);
+        });
+        document.getElementById('historicPane').addEventListener('mouseleave', () => {
+            const loupe = document.getElementById('archivistLoupe');
+            if (loupe) loupe.classList.remove('active');
+        });
         function closeWelcomeModal() {
             const chk = document.getElementById('dontShowWelcomeChk');
             if (chk && chk.checked) {
@@ -1925,11 +3109,14 @@
             currentLang = lang;
             document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
             if (btnEl) btnEl.classList.add('active');
-            document.getElementById('mobDrawerBtn').innerText = `🔍 Поиск / ${lang.toUpperCase()} ▾`;
+            document.getElementById('mobDrawerBtn').innerText = `🔍 Поиск ▾`;
+            applyExplorerStateToUI();
+            renderDiaryModalContents();
             closeMobileDrawer();
             exploreWorldPoint(currentCoords[0], currentCoords[1], null);
         }
 
+        loadExplorerState();
         exploreWorldPoint(54.2611, 18.6361, null);
     </script>
 </body>
